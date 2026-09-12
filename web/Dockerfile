@@ -9,7 +9,9 @@ COPY package.json package-lock.json ./
 # image ships npm 10, which rejects it as "out of sync".
 RUN npm install --no-audit --no-fund
 COPY . .
-RUN npm run build
+# Regenerate .nuxt types now that the source is present (the postinstall from
+# `npm install` ran against package files only), then build with type checking.
+RUN npx nuxt prepare && npm run build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app

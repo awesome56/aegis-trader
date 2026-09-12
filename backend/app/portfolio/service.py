@@ -51,6 +51,11 @@ UNKNOWN_LABEL = "UNKNOWN"
 CASH_LABEL = "CASH"
 
 
+def _as_utc(value: datetime) -> datetime:
+    """SQLite returns naive datetimes; Postgres returns tz-aware. Normalise."""
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
 class _MarkedPosition(NamedTuple):
     position: Position
     mark: Decimal
@@ -309,8 +314,11 @@ class PortfolioService:
         bucket = datetime.fromtimestamp(int(now.timestamp()) // interval * interval, tz=UTC)
 
         latest = await self._snapshots.latest(self._portfolio.id)
-        if latest is not None and latest.snapshot_time >= bucket:
-            return latest
+        if latest is not None:
+            latest_time = _as_utc(latest.snapshot_time)
+            if latest_time >= bucket:
+                latest.snapshot_time = latest_time
+                return latest
 
         valuation = await self._value()
         daily_pnl, daily_return = await self._daily_pnl(valuation.equity)
@@ -378,7 +386,7 @@ class PortfolioService:
         equity = (await self._value()).equity
         points = [
             SnapshotPoint(
-                snapshot_time=row.snapshot_time,
+                snapshot_time=_as_utc(row.snapshot_time),
                 equity=Decimal(str(row.equity)),
                 cash=Decimal(str(row.cash)),
                 market_value=Decimal(str(row.market_value)),

@@ -443,6 +443,22 @@ paths:
                 $ref: '#/components/schemas/PortfolioSummary'
       security:
       - HTTPBearer: []
+  /api/v1/portfolio/snapshot:
+    post:
+      tags:
+      - portfolio
+      summary: Create a portfolio snapshot (interval-bucketed, idempotent)
+      description: Trigger a snapshot. Also the hook a future scheduler/worker calls.
+      operationId: create_snapshot_api_v1_portfolio_snapshot_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotPoint'
+      security:
+      - HTTPBearer: []
   /api/v1/portfolio/history:
     get:
       tags:

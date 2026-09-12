@@ -120,9 +120,18 @@ async def test_order_listing_filter_and_cancel(authenticated_client: AsyncClient
 
 async def test_portfolio_history_and_allocation(authenticated_client: AsyncClient) -> None:
     await authenticated_client.post("/api/v1/broker/orders", json=BUY)
+
+    snapshot = await authenticated_client.post("/api/v1/portfolio/snapshot")
+    assert snapshot.status_code == 200
+    assert snapshot.json()["position_count"] == 1
+    # Interval-bucketed: a second call returns the same bucket, not a duplicate.
+    again = await authenticated_client.post("/api/v1/portfolio/snapshot")
+    assert again.json()["snapshot_time"] == snapshot.json()["snapshot_time"]
+
     history = await authenticated_client.get("/api/v1/portfolio/history?range=1M")
     assert history.status_code == 200
     assert history.json()["range"] == "1M"
+    assert history.json()["point_count"] == 1
     allocation = await authenticated_client.get("/api/v1/portfolio/allocation")
     assert allocation.status_code == 200
     assert allocation.json()["total_equity"]

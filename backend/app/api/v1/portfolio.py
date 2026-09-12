@@ -8,7 +8,12 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from app.portfolio.dependencies import PortfolioDep
-from app.portfolio.types import AllocationBreakdown, PortfolioHistory, PortfolioSummary
+from app.portfolio.types import (
+    AllocationBreakdown,
+    PortfolioHistory,
+    PortfolioSummary,
+    SnapshotPoint,
+)
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -16,6 +21,28 @@ router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 @router.get("", response_model=PortfolioSummary, summary="Portfolio summary")
 async def get_portfolio(portfolio: PortfolioDep) -> PortfolioSummary:
     return await portfolio.summary()
+
+
+@router.post(
+    "/snapshot",
+    response_model=SnapshotPoint,
+    summary="Create a portfolio snapshot (interval-bucketed, idempotent)",
+)
+async def create_snapshot(portfolio: PortfolioDep) -> SnapshotPoint:
+    """Trigger a snapshot. Also the hook a future scheduler/worker calls."""
+    snapshot = await portfolio.create_snapshot()
+    return SnapshotPoint(
+        snapshot_time=snapshot.snapshot_time,
+        equity=snapshot.equity,
+        cash=snapshot.cash,
+        market_value=snapshot.market_value,
+        realized_pnl=snapshot.realized_pnl,
+        unrealized_pnl=snapshot.unrealized_pnl,
+        total_return_percent=snapshot.total_return_pct,
+        daily_pnl=snapshot.daily_pnl,
+        exposure_percent=snapshot.exposure_pct,
+        position_count=snapshot.position_count,
+    )
 
 
 @router.get("/history", response_model=PortfolioHistory, summary="Portfolio equity history")

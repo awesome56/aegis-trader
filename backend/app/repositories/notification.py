@@ -84,3 +84,30 @@ class SystemEventRepository(BaseRepository[SystemEvent]):
             occurred_at=occurred_at or datetime.now(UTC),
         )
         return await self.add(event)
+
+    async def list_events(
+        self,
+        *,
+        event_type_prefix: str | None = None,
+        severity: NotificationSeverity | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[SystemEvent]:
+        stmt = select(SystemEvent)
+        if event_type_prefix is not None:
+            stmt = stmt.where(SystemEvent.event_type.like(f"{event_type_prefix}%"))
+        if severity is not None:
+            stmt = stmt.where(SystemEvent.severity == severity)
+        stmt = stmt.order_by(SystemEvent.occurred_at.desc()).limit(limit).offset(offset)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_events(
+        self, *, event_type_prefix: str | None = None, severity: NotificationSeverity | None = None
+    ) -> int:
+        stmt = select(func.count()).select_from(SystemEvent)
+        if event_type_prefix is not None:
+            stmt = stmt.where(SystemEvent.event_type.like(f"{event_type_prefix}%"))
+        if severity is not None:
+            stmt = stmt.where(SystemEvent.severity == severity)
+        return int(await self.session.scalar(stmt) or 0)

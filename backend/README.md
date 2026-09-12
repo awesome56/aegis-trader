@@ -165,3 +165,85 @@ persisted and mirrored over the socket as `notification.created`.
 `position.updated`, `position.closed`, `broker.account_updated`,
 `notification.created`. Events are published **after a successful commit**
 (best-effort, in-process). Agent/risk/strategy events are intentionally absent.
+
+## Strategies (Phase 5)
+
+Deterministic strategy engine (`app/strategies/`). Strategies observe market data
+and emit analytical `StrategySignal`s; they never size positions or trade.
+
+- `Strategy` interface + `StrategyContext` (candles, quote, regime — never
+  broker/portfolio state) + a registry keyed by stable slug.
+- Bootstrap seeds **trend_following / momentum / mean_reversion** idempotently.
+- `MarketRegimeService` classifies two axes — **trend** (BULLISH/BEARISH/
+  SIDEWAYS) and **volatility** (HIGH/NORMAL/LOW) — plus a `primary` MarketRegime.
+- `StrategyService` loads enabled strategies, fetches candles, classifies the
+  regime, evaluates, persists de-duplicated signals
+  (`unique(strategy_id, symbol, timeframe, direction, data_timestamp)`) and
+  emits `strategy.signal`. Stale analysis data (older than
+  `timeframe * STRATEGY_ANALYSIS_MAX_AGE_MULTIPLIER`) is refused.
+- No-signal evaluations are **not** persisted.
+
+| Strategy | Indicators | Regime gating | Signal logic |
+|----------|-----------|---------------|--------------|
+| Trend Following | EMA fast/slow, slow-EMA slope, ATR | not SIDEWAYS; HIGH vol blocked unless allowed | fast/slow spread ≥ threshold, slope sign, price side |
+| Momentum | RSI, MACD, relative volume | not SIDEWAYS; HIGH vol blocked unless allowed | MACD>signal & hist>0, RSI in (50, overbought), volume confirms |
+| Mean Reversion | Bollinger %B, RSI | SIDEWAYS, non-HIGH vol (trending blocked unless allowed) | %B extreme + RSI extreme confirmation |
+
+Confidence/strength formulas are deterministic and documented in each module.
+
+Endpoints: `GET /strategies`, `/strategies/{id}`, `/strategies/signals`,
+`/strategies/{id}/signals`, `POST /strategies/{id}/enable|disable`,
+`POST /strategies/evaluate` (analytical only).
+
+## Risk Engine (Phase 6)
+
+Deterministic, read-only evaluator (`app/risk/`). It answers *"would this
+hypothetical trade be permitted, and how large may it be?"* — it never submits
+orders or mutates cash/positions.
+
+- `RiskRequest` (hypothetical) → `RiskContext` (built once) → 15 independent
+  `RiskRule`s → `RiskEvaluation` (persisted) + events.
+- **Position sizing**: approved = min(requested, buying power, max position %,
+  max portfolio exposure, sector/asset-class exposure, stop-distance risk
+  budget). Over-limit-but-reducible ⇒ `APPROVED_WITH_WARNINGS`; unreducible ⇒
+  `REJECTED`.
+- **Kill switch**: persisted `system_state` (TRADING_ENABLED / TRADING_PAUSED /
+  TRADING_DISABLED / EMERGENCY_STOP). Survives restart; transitions require
+  `confirm=true`, are audited (`SystemEvent`), notified and broadcast.
+- **Risk settings**: per-user persisted `risk_settings` seeded from environment
+  defaults; editable via `PUT /risk/settings`.
+- Fail closed on stale data, invalid stop, insufficient buying power, emergency
+  stop, or unknown critical state. Rejections return structured rule results.
+- **Concurrency**: evaluation does not reserve funds/exposure; Phase 7 must
+  revalidate immediately before submission.
+
+| Rule | Current value source | Limit source | Blocking? |
+|------|----------------------|--------------|-----------|
+| trading_state | persisted system_state | TRADING_ENABLED | yes |
+| market_freshness | market timestamp age | MAX_*_AGE / Phase 2 | yes |
+| request_validity | request fields | — | yes |
+| buying_power | buying power vs entry | broker buying power | reducible |
+| stop_loss | request stop | REQUIRE_STOP_LOSS | yes |
+| reward_risk | target/stop | MINIMUM_RISK_REWARD_RATIO | yes |
+| max_position_percent | projected symbol weight | MAX_POSITION_PERCENTAGE | reducible |
+| max_portfolio_exposure | projected exposure | MAX_PORTFOLIO_EXPOSURE | reducible |
+| max_open_positions | position count | MAX_OPEN_POSITIONS | yes |
+| max_sector_exposure | projected sector weight | MAX_SECTOR_EXPOSURE | reducible |
+| max_asset_class_exposure | projected class weight | MAX_ASSET_CLASS_EXPOSURE | reducible |
+| max_daily_loss | daily P&L | MAX_DAILY_LOSS_PERCENTAGE | yes |
+| max_drawdown | snapshot drawdown | MAX_DRAWDOWN_PERCENTAGE | yes |
+| max_trades_per_day | broker orders today | MAX_TRADES_PER_DAY | yes |
+| strategy_confidence | request confidence | MINIMUM_CONFIDENCE | yes |
+
+Endpoints: `GET /risk`, `GET|PUT /risk/settings`,
+`GET /risk/evaluations{,/{id}}`, `GET /risk/events`,
+`POST /risk/evaluate`, `GET /risk/trading-status`,
+`POST /risk/pause|resume|enable|disable|emergency-stop`.
+
+WebSocket events: `strategy.signal`, `strategy.enabled`, `strategy.disabled`,
+`risk.evaluation_created`, `risk.warning`, `risk.critical`,
+`risk.settings_updated`, `system.trading_paused/resumed/disabled`,
+`system.emergency_stop`.
+
+> Strategies do not trade. Risk does not trade. Phase 7 owns execution
+> orchestration.

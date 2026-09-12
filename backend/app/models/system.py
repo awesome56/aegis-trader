@@ -9,7 +9,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, JSONType, TimestampMixin, UUIDMixin
-from app.models.enums import NotificationSeverity
+from app.models.enums import NotificationSeverity, TradingState
 
 
 class SystemEvent(UUIDMixin, TimestampMixin, Base):
@@ -56,3 +56,29 @@ class Notification(UUIDMixin, TimestampMixin, Base):
     user: Mapped[User] = relationship(back_populates="notifications")  # noqa: F821
 
     __table_args__ = (Index("ix_notifications_user_read", "user_id", "is_read"),)
+
+
+class SystemState(UUIDMixin, TimestampMixin, Base):
+    """Persisted system-wide trading state (kill switch).
+
+    Stored in the database, not process memory, so an EMERGENCY_STOP survives a
+    restart. The row is keyed for future extension (e.g. per-scope switches).
+    """
+
+    __tablename__ = "system_state"
+
+    key: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False, default="trading"
+    )
+    trading_state: Mapped[TradingState] = mapped_column(
+        Enum(TradingState, native_enum=False),
+        default=TradingState.TRADING_ENABLED,
+        nullable=False,
+        index=True,
+    )
+    previous_state: Mapped[TradingState | None] = mapped_column(
+        Enum(TradingState, native_enum=False)
+    )
+    reason: Mapped[str | None] = mapped_column(Text)
+    actor: Mapped[str | None] = mapped_column(String(128))
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

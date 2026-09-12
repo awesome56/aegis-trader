@@ -13,6 +13,8 @@ from app.api.v1 import (
     notifications,
     portfolio,
     positions,
+    risk,
+    strategies,
     system,
 )
 
@@ -26,6 +28,7 @@ api_router.include_router(portfolio.router)
 api_router.include_router(positions.router)
 api_router.include_router(broker.router)
 api_router.include_router(notifications.router)
+api_router.include_router(strategies.router)
+api_router.include_router(risk.router)
 
-# Phase 5+ routers (strategies, risk, orders pipeline, agent, backtests) will be
-# attached here.
+# Phase 7+ routers (orders pipeline, agent, backtests) will be attached here.

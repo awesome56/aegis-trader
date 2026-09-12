@@ -232,20 +232,21 @@ tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 | 2 | Market data provider, candles, quotes, indicators | ✅ Done |
 | 3 | Paper broker (fills, slippage, fees, P&L) | ✅ Done |
 | 4 | Portfolio service, snapshots, REST + WebSocket, notifications | ✅ Done |
-| 5 | Trend / momentum / mean-reversion strategies | ⏭ Next |
-| 6 | Deterministic Risk Engine + kill switch | |
-| 7 | TradeProposal → Risk → OrderManager pipeline | |
+| 5 | Trend / momentum / mean-reversion strategies | ✅ Done |
+| 6 | Deterministic Risk Engine + kill switch | ✅ Done |
+| 7 | TradeProposal → Risk → OrderManager pipeline | ⏭ Next |
 | 8 | Backtesting engine + Flutter UI | |
 | 9 | TradingAnalysisAgent (read tools + create_trade_proposal only) | |
 | 10 | Flutter completion, offline cache, notifications | |
 | 11 | Extended multi-agent intelligence | |
 
-### Phase 5 — next task
+### Phase 7 — next task
 
-Implement the deterministic strategy engine: a `Strategy` interface plus Trend
-Following, Momentum and Mean Reversion strategies returning typed
-`StrategySignal`s from market data (SMA/EMA/RSI/MACD/ATR/Bollinger/volume),
-independently testable, with no order execution and no LLM involvement.
+Wire the execution pipeline: `TradeProposal` → `RiskRequest` →
+`RiskEngine.evaluate()` → `RiskEvaluation` (APPROVED) → `OrderManager` →
+`MarketDataService.get_fresh_quote()` → final risk revalidation →
+`BrokerAdapter.submit_order()`, with idempotency and the existing audit/event
+infrastructure. Strategies and the Risk Engine never submit orders themselves.
 
 ---
 

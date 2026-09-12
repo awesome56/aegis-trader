@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -56,6 +57,17 @@ class OrderRepository(BaseRepository[Order]):
         )
         if status is not None:
             stmt = stmt.where(Order.status == status)
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def count_created_since(self, broker_account_id: uuid.UUID, since: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Order)
+            .where(
+                Order.broker_account_id == broker_account_id,
+                Order.created_at >= since,
+            )
+        )
         return int(await self.session.scalar(stmt) or 0)
 
     async def list_open_for_account(self, broker_account_id: uuid.UUID) -> list[Order]:

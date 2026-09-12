@@ -34,9 +34,22 @@ def test_agent_layer_cannot_import_broker_or_orders() -> None:
 
 
 def test_strategy_layer_cannot_import_broker_or_orders() -> None:
-    modules = _imported_modules_after("app.strategies")
-    forbidden = [m for m in modules if m.startswith(("app.brokers", "app.orders"))]
-    assert forbidden == [], f"Strategy layer must not import execution modules: {forbidden}"
+    modules = _fresh_import(
+        "app.strategies",
+        ("app.strategies", "app.brokers", "app.orders", "app.risk", "app.agents"),
+    )
+    forbidden = [
+        m for m in modules if m.startswith(("app.brokers", "app.orders", "app.risk", "app.agents"))
+    ]
+    assert forbidden == [], (
+        f"Strategy layer must not import execution/risk/agent modules: {forbidden}"
+    )
+
+
+def test_risk_layer_cannot_import_brokers_or_agents() -> None:
+    modules = _fresh_import("app.risk.service", ("app.risk", "app.agents", "app.orders"))
+    forbidden = [m for m in modules if m.startswith(("app.agents", "app.orders"))]
+    assert forbidden == [], f"Risk layer must not import agent/order modules: {forbidden}"
 
 
 def test_risk_layer_cannot_import_broker() -> None:

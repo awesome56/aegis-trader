@@ -76,11 +76,13 @@ async def test_broker_account_positions_and_dashboard(authenticated_client: Asyn
     assert body["portfolio"]["position_count"] == 1
     assert body["availability"] == {
         "agent": False,
-        "risk": False,
-        "strategies": False,
+        "risk": True,
+        "strategies": True,
         "backtesting": False,
     }
     assert body["broker_status"] == "PAPER"
+    assert body["trading_state"] in {"TRADING_ENABLED", "TRADING_PAUSED", "EMERGENCY_STOP"}
+    assert body["risk_status"] in {"SAFE", "WARNING", "CRITICAL"}
     assert len(body["recent_orders"]) == 1
 
 

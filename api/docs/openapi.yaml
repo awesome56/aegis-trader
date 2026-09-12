@@ -933,6 +933,633 @@ paths:
                 $ref: '#/components/schemas/UnreadCountSchema'
       security:
       - HTTPBearer: []
+  /api/v1/strategies:
+    get:
+      tags:
+      - strategies
+      summary: List strategies
+      operationId: list_strategies_api_v1_strategies_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/StrategySchema'
+                type: array
+                title: Response List Strategies Api V1 Strategies Get
+      security:
+      - HTTPBearer: []
+  /api/v1/strategies/signals:
+    get:
+      tags:
+      - strategies
+      summary: List strategy signals
+      operationId: list_signals_api_v1_strategies_signals_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: strategy_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Id
+      - name: symbol
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Symbol
+      - name: timeframe
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timeframe
+      - name: direction
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/SignalDirection'
+          - type: 'null'
+          title: Direction
+      - name: start
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: ISO 8601 start
+          title: Start
+        description: ISO 8601 start
+      - name: end
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: ISO 8601 end
+          title: End
+        description: ISO 8601 end
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/strategies/{strategy_id}:
+    get:
+      tags:
+      - strategies
+      summary: Strategy detail
+      operationId: get_strategy_api_v1_strategies__strategy_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: strategy_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Strategy Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategyDetailSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/strategies/{strategy_id}/signals:
+    get:
+      tags:
+      - strategies
+      summary: Signals for a strategy
+      operationId: strategy_signals_api_v1_strategies__strategy_id__signals_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: strategy_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Strategy Id
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/strategies/{strategy_id}/enable:
+    post:
+      tags:
+      - strategies
+      summary: Enable strategy
+      operationId: enable_strategy_api_v1_strategies__strategy_id__enable_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: strategy_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Strategy Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/strategies/{strategy_id}/disable:
+    post:
+      tags:
+      - strategies
+      summary: Disable strategy
+      operationId: disable_strategy_api_v1_strategies__strategy_id__disable_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: strategy_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Strategy Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/strategies/evaluate:
+    post:
+      tags:
+      - strategies
+      summary: Evaluate strategies on demand (analytical only)
+      operationId: evaluate_strategies_api_v1_strategies_evaluate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/StrategyEvaluationSchema'
+                type: array
+                title: Response Evaluate Strategies Api V1 Strategies Evaluate Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk:
+    get:
+      tags:
+      - risk
+      summary: Risk overview
+      operationId: get_risk_overview_api_v1_risk_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskOverviewSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/settings:
+    get:
+      tags:
+      - risk
+      summary: Get risk settings
+      operationId: get_settings_route_api_v1_risk_settings_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskSettingsSchema'
+      security:
+      - HTTPBearer: []
+    put:
+      tags:
+      - risk
+      summary: Update risk settings
+      operationId: update_settings_route_api_v1_risk_settings_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskSettingsUpdateSchema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskSettingsSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/evaluations:
+    get:
+      tags:
+      - risk
+      summary: List risk evaluations
+      operationId: list_evaluations_api_v1_risk_evaluations_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: decision
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision
+      - name: symbol
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Symbol
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/risk/evaluations/{evaluation_id}:
+    get:
+      tags:
+      - risk
+      summary: Risk evaluation detail
+      operationId: get_evaluation_api_v1_risk_evaluations__evaluation_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: evaluation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Evaluation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/risk/events:
+    get:
+      tags:
+      - risk
+      summary: Recent risk events
+      operationId: list_events_api_v1_risk_events_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RiskEventSchema'
+                title: Response List Events Api V1 Risk Events Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/risk/evaluate:
+    post:
+      tags:
+      - risk
+      summary: Evaluate a hypothetical trade
+      description: Deterministic evaluation only — never submits an order.
+      operationId: evaluate_api_v1_risk_evaluate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskRequestSchema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/trading-status:
+    get:
+      tags:
+      - risk
+      summary: Trading status
+      operationId: trading_status_api_v1_risk_trading_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/pause:
+    post:
+      tags:
+      - risk
+      summary: Pause new trading
+      operationId: pause_api_v1_risk_pause_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradingActionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/resume:
+    post:
+      tags:
+      - risk
+      summary: Resume trading
+      operationId: resume_api_v1_risk_resume_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradingActionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/enable:
+    post:
+      tags:
+      - risk
+      summary: Enable trading
+      operationId: enable_api_v1_risk_enable_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradingActionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/disable:
+    post:
+      tags:
+      - risk
+      summary: Disable new trading
+      operationId: disable_api_v1_risk_disable_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradingActionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/risk/emergency-stop:
+    post:
+      tags:
+      - risk
+      summary: Activate emergency stop
+      operationId: emergency_stop_api_v1_risk_emergency_stop_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradingActionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingStatusSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
   /:
     get:
       tags:
@@ -1579,11 +2206,11 @@ components:
         risk:
           type: boolean
           title: Risk
-          default: false
+          default: true
         strategies:
           type: boolean
           title: Strategies
-          default: false
+          default: true
         backtesting:
           type: boolean
           title: Backtesting
@@ -1597,6 +2224,9 @@ components:
         trading_mode:
           type: string
           title: Trading Mode
+        trading_state:
+          type: string
+          title: Trading State
         broker_provider:
           type: string
           title: Broker Provider
@@ -1615,6 +2245,19 @@ components:
         market_session:
           type: string
           title: Market Session
+        risk_status:
+          type: string
+          title: Risk Status
+        risk_utilizations:
+          items:
+            $ref: '#/components/schemas/RiskUtilizationSchema'
+          type: array
+          title: Risk Utilizations
+        recent_signals:
+          items:
+            $ref: '#/components/schemas/SignalSchema'
+          type: array
+          title: Recent Signals
         realtime_connections:
           type: integer
           title: Realtime Connections
@@ -1641,12 +2284,16 @@ components:
       required:
       - portfolio
       - trading_mode
+      - trading_state
       - broker_provider
       - broker_status
       - market_data_provider
       - market_data_status
       - market_is_open
       - market_session
+      - risk_status
+      - risk_utilizations
+      - recent_signals
       - realtime_connections
       - unread_notifications
       - drawdown_percent
@@ -1654,6 +2301,38 @@ components:
       - recent_notifications
       - availability
       title: DashboardSchema
+    EvaluateRequest:
+      properties:
+        symbol:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Symbol
+        timeframe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timeframe
+        strategy_ids:
+          anyOf:
+          - items:
+              type: string
+              format: uuid
+            type: array
+          - type: 'null'
+          title: Strategy Ids
+      type: object
+      required:
+      - symbol
+      title: EvaluateRequest
+    EvaluationStatus:
+      type: string
+      enum:
+      - SIGNAL
+      - NO_SIGNAL
+      - INSUFFICIENT_DATA
+      - STALE_DATA
+      title: EvaluationStatus
     HTTPValidationError:
       properties:
         detail:
@@ -1918,6 +2597,15 @@ components:
       - next_close
       - provider
       title: MarketClockSchema
+    MarketRegime:
+      type: string
+      enum:
+      - BULLISH
+      - BEARISH
+      - SIDEWAYS
+      - HIGH_VOLATILITY
+      - LOW_VOLATILITY
+      title: MarketRegime
     MarketSession:
       type: string
       enum:
@@ -2470,6 +3158,660 @@ components:
       - email
       - password
       title: RegisterRequest
+    RiskDecision:
+      type: string
+      enum:
+      - APPROVED
+      - APPROVED_WITH_WARNINGS
+      - REJECTED
+      - ERROR
+      title: RiskDecision
+    RiskEvaluationPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/RiskEvaluationSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: RiskEvaluationPageSchema
+    RiskEvaluationSchema:
+      properties:
+        id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Id
+        decision:
+          $ref: '#/components/schemas/RiskDecision'
+        symbol:
+          type: string
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        source:
+          type: string
+          title: Source
+        requested_quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Requested Quantity
+        approved_quantity:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Approved Quantity
+        requested_notional:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Requested Notional
+        approved_notional:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Approved Notional
+        entry_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Entry Price
+        stop_loss:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Loss
+        take_profit:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Take Profit
+        estimated_risk_amount:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Estimated Risk Amount
+        risk_reward_ratio:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Risk Reward Ratio
+        portfolio_exposure_before_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Portfolio Exposure Before Percent
+        portfolio_exposure_after_percent:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Portfolio Exposure After Percent
+        risk_score:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Risk Score
+        rules:
+          items:
+            $ref: '#/components/schemas/RuleResultSchema'
+          type: array
+          title: Rules
+        reasons:
+          items:
+            type: string
+          type: array
+          title: Reasons
+        warnings:
+          items:
+            type: string
+          type: array
+          title: Warnings
+        evaluated_at:
+          type: string
+          format: date-time
+          title: Evaluated At
+      type: object
+      required:
+      - id
+      - decision
+      - symbol
+      - side
+      - source
+      - requested_quantity
+      - approved_quantity
+      - requested_notional
+      - approved_notional
+      - entry_price
+      - stop_loss
+      - take_profit
+      - estimated_risk_amount
+      - risk_reward_ratio
+      - portfolio_exposure_before_percent
+      - portfolio_exposure_after_percent
+      - risk_score
+      - rules
+      - reasons
+      - warnings
+      - evaluated_at
+      title: RiskEvaluationSchema
+    RiskEventSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        event_type:
+          type: string
+          title: Event Type
+        severity:
+          type: string
+          title: Severity
+        source:
+          type: string
+          title: Source
+        message:
+          type: string
+          title: Message
+        actor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actor
+        payload:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Payload
+        occurred_at:
+          type: string
+          format: date-time
+          title: Occurred At
+      type: object
+      required:
+      - id
+      - event_type
+      - severity
+      - source
+      - message
+      - actor
+      - payload
+      - occurred_at
+      title: RiskEventSchema
+    RiskOverviewSchema:
+      properties:
+        status:
+          $ref: '#/components/schemas/RiskStatus'
+        trading_state:
+          $ref: '#/components/schemas/TradingState'
+        equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Equity
+        cash:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash
+        buying_power:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Buying Power
+        portfolio_exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Portfolio Exposure Percent
+        daily_pnl:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Daily Pnl
+        daily_loss_limit_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Daily Loss Limit Percent
+        current_drawdown_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Current Drawdown Percent
+        max_drawdown_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Drawdown Percent
+        open_positions:
+          type: integer
+          title: Open Positions
+        max_open_positions:
+          type: integer
+          title: Max Open Positions
+        trades_today:
+          type: integer
+          title: Trades Today
+        max_trades_per_day:
+          type: integer
+          title: Max Trades Per Day
+        utilizations:
+          items:
+            $ref: '#/components/schemas/RiskUtilizationSchema'
+          type: array
+          title: Utilizations
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - status
+      - trading_state
+      - equity
+      - cash
+      - buying_power
+      - portfolio_exposure_percent
+      - daily_pnl
+      - daily_loss_limit_percent
+      - current_drawdown_percent
+      - max_drawdown_percent
+      - open_positions
+      - max_open_positions
+      - trades_today
+      - max_trades_per_day
+      - utilizations
+      - updated_at
+      title: RiskOverviewSchema
+    RiskRequestSchema:
+      properties:
+        symbol:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        requested_quantity:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Requested Quantity
+        requested_notional:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Requested Notional
+        entry_price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Entry Price
+        stop_loss:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Loss
+        take_profit:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Take Profit
+        strategy_signal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Signal Id
+        strategy_confidence:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Strategy Confidence
+        time_horizon:
+          anyOf:
+          - $ref: '#/components/schemas/TimeHorizon'
+          - type: 'null'
+      type: object
+      required:
+      - symbol
+      - side
+      title: RiskRequestSchema
+    RiskSettingsSchema:
+      properties:
+        is_enabled:
+          type: boolean
+          title: Is Enabled
+        max_position_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Position Percent
+        max_portfolio_exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Portfolio Exposure Percent
+        max_open_positions:
+          type: integer
+          title: Max Open Positions
+        max_daily_loss_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Daily Loss Percent
+        max_drawdown_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Drawdown Percent
+        max_trades_per_day:
+          type: integer
+          title: Max Trades Per Day
+        max_risk_per_trade_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Risk Per Trade Percent
+        min_strategy_confidence:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Min Strategy Confidence
+        min_reward_risk_ratio:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Min Reward Risk Ratio
+        require_stop_loss:
+          type: boolean
+          title: Require Stop Loss
+        require_strategy_signal:
+          type: boolean
+          title: Require Strategy Signal
+        max_sector_exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Sector Exposure Percent
+        max_asset_class_exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Asset Class Exposure Percent
+        unknown_sector_policy:
+          type: string
+          title: Unknown Sector Policy
+        daily_loss_include_unrealized:
+          type: boolean
+          title: Daily Loss Include Unrealized
+        commission_buffer_bps:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Commission Buffer Bps
+      type: object
+      required:
+      - is_enabled
+      - max_position_percent
+      - max_portfolio_exposure_percent
+      - max_open_positions
+      - max_daily_loss_percent
+      - max_drawdown_percent
+      - max_trades_per_day
+      - max_risk_per_trade_percent
+      - min_strategy_confidence
+      - min_reward_risk_ratio
+      - require_stop_loss
+      - require_strategy_signal
+      - max_sector_exposure_percent
+      - max_asset_class_exposure_percent
+      - unknown_sector_policy
+      - daily_loss_include_unrealized
+      - commission_buffer_bps
+      title: RiskSettingsSchema
+    RiskSettingsUpdateSchema:
+      properties:
+        is_enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Enabled
+        max_position_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Position Percent
+        max_portfolio_exposure_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Portfolio Exposure Percent
+        max_open_positions:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0.0
+          - type: 'null'
+          title: Max Open Positions
+        max_daily_loss_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Daily Loss Percent
+        max_drawdown_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Drawdown Percent
+        max_trades_per_day:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0.0
+          - type: 'null'
+          title: Max Trades Per Day
+        max_risk_per_trade_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Risk Per Trade Percent
+        min_strategy_confidence:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Strategy Confidence
+        min_reward_risk_ratio:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Reward Risk Ratio
+        require_stop_loss:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Require Stop Loss
+        require_strategy_signal:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Require Strategy Signal
+        max_sector_exposure_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Sector Exposure Percent
+        max_asset_class_exposure_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Asset Class Exposure Percent
+        unknown_sector_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unknown Sector Policy
+        daily_loss_include_unrealized:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Daily Loss Include Unrealized
+        commission_buffer_bps:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Commission Buffer Bps
+      type: object
+      title: RiskSettingsUpdateSchema
+    RiskStatus:
+      type: string
+      enum:
+      - SAFE
+      - WARNING
+      - CRITICAL
+      title: RiskStatus
+    RiskUtilizationSchema:
+      properties:
+        key:
+          type: string
+          title: Key
+        current:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Current
+        limit:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Limit
+        utilization_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Utilization Percent
+        status:
+          $ref: '#/components/schemas/RiskStatus'
+        unit:
+          type: string
+          title: Unit
+      type: object
+      required:
+      - key
+      - current
+      - limit
+      - utilization_percent
+      - status
+      - unit
+      title: RiskUtilizationSchema
+    RuleResultSchema:
+      properties:
+        key:
+          type: string
+          title: Key
+        passed:
+          type: boolean
+          title: Passed
+        severity:
+          $ref: '#/components/schemas/RuleSeverity'
+        message:
+          type: string
+          title: Message
+        current:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Current
+        limit:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Limit
+        utilization_percent:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Utilization Percent
+        metadata:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Metadata
+      type: object
+      required:
+      - key
+      - passed
+      - severity
+      - message
+      title: RuleResultSchema
+    RuleSeverity:
+      type: string
+      enum:
+      - INFO
+      - WARNING
+      - BLOCKING
+      title: RuleSeverity
     SeriesSchema:
       properties:
         period:
@@ -2530,6 +3872,193 @@ components:
       - last_used_at
       - expires_at
       title: SessionRead
+    SignalDirection:
+      type: string
+      enum:
+      - LONG
+      - SHORT
+      - NEUTRAL
+      title: SignalDirection
+    SignalEvidenceSchema:
+      properties:
+        strategy_key:
+          type: string
+          title: Strategy Key
+        strategy_name:
+          type: string
+          title: Strategy Name
+        symbol:
+          type: string
+          title: Symbol
+        direction:
+          $ref: '#/components/schemas/SignalDirection'
+        strength:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Strength
+        confidence:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Confidence
+        price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Price
+        timeframe:
+          type: string
+          title: Timeframe
+        time_horizon:
+          $ref: '#/components/schemas/TimeHorizon'
+        market_regime:
+          $ref: '#/components/schemas/MarketRegime'
+        indicators:
+          additionalProperties: true
+          type: object
+          title: Indicators
+        generated_at:
+          type: string
+          format: date-time
+          title: Generated At
+        data_timestamp:
+          type: string
+          format: date-time
+          title: Data Timestamp
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      type: object
+      required:
+      - strategy_key
+      - strategy_name
+      - symbol
+      - direction
+      - strength
+      - confidence
+      - timeframe
+      - time_horizon
+      - market_regime
+      - indicators
+      - generated_at
+      - data_timestamp
+      - expires_at
+      title: SignalEvidenceSchema
+      description: Analytical evidence produced by an evaluation (not a persisted
+        row).
+    SignalPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/SignalSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: SignalPageSchema
+    SignalSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        strategy_id:
+          type: string
+          format: uuid
+          title: Strategy Id
+        strategy_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Strategy Key
+        strategy_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Strategy Name
+        symbol:
+          type: string
+          title: Symbol
+        direction:
+          $ref: '#/components/schemas/SignalDirection'
+        strength:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Strength
+        confidence:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Confidence
+        price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Price
+        timeframe:
+          type: string
+          title: Timeframe
+        time_horizon:
+          anyOf:
+          - $ref: '#/components/schemas/TimeHorizon'
+          - type: 'null'
+        market_regime:
+          anyOf:
+          - $ref: '#/components/schemas/MarketRegime'
+          - type: 'null'
+        indicators:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Indicators
+        signal_time:
+          type: string
+          format: date-time
+          title: Signal Time
+        data_timestamp:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Data Timestamp
+        expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Expires At
+      type: object
+      required:
+      - id
+      - strategy_id
+      - symbol
+      - direction
+      - strength
+      - confidence
+      - price
+      - timeframe
+      - time_horizon
+      - market_regime
+      - indicators
+      - signal_time
+      - data_timestamp
+      - expires_at
+      title: SignalSchema
     SnapshotPoint:
       properties:
         snapshot_time:
@@ -2584,6 +4113,197 @@ components:
       - exposure_percent
       - position_count
       title: SnapshotPoint
+    StrategyDetailSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        key:
+          type: string
+          title: Key
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        strategy_type:
+          $ref: '#/components/schemas/StrategyType'
+        is_enabled:
+          type: boolean
+          title: Is Enabled
+        timeframe:
+          type: string
+          title: Timeframe
+        priority:
+          type: integer
+          title: Priority
+        parameters:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Parameters
+        asset_classes:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Asset Classes
+        signal_count:
+          type: integer
+          title: Signal Count
+          default: 0
+        last_signal_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Signal At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        recent_signals:
+          items:
+            $ref: '#/components/schemas/SignalSchema'
+          type: array
+          title: Recent Signals
+      type: object
+      required:
+      - id
+      - key
+      - name
+      - description
+      - strategy_type
+      - is_enabled
+      - timeframe
+      - priority
+      - parameters
+      - asset_classes
+      - created_at
+      - updated_at
+      title: StrategyDetailSchema
+    StrategyEvaluationSchema:
+      properties:
+        strategy_key:
+          type: string
+          title: Strategy Key
+        strategy_name:
+          type: string
+          title: Strategy Name
+        symbol:
+          type: string
+          title: Symbol
+        timeframe:
+          type: string
+          title: Timeframe
+        status:
+          $ref: '#/components/schemas/EvaluationStatus'
+        reason:
+          type: string
+          title: Reason
+        signal:
+          anyOf:
+          - $ref: '#/components/schemas/SignalEvidenceSchema'
+          - type: 'null'
+      type: object
+      required:
+      - strategy_key
+      - strategy_name
+      - symbol
+      - timeframe
+      - status
+      - reason
+      title: StrategyEvaluationSchema
+    StrategySchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        key:
+          type: string
+          title: Key
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        strategy_type:
+          $ref: '#/components/schemas/StrategyType'
+        is_enabled:
+          type: boolean
+          title: Is Enabled
+        timeframe:
+          type: string
+          title: Timeframe
+        priority:
+          type: integer
+          title: Priority
+        parameters:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Parameters
+        asset_classes:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Asset Classes
+        signal_count:
+          type: integer
+          title: Signal Count
+          default: 0
+        last_signal_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Signal At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - key
+      - name
+      - description
+      - strategy_type
+      - is_enabled
+      - timeframe
+      - priority
+      - parameters
+      - asset_classes
+      - created_at
+      - updated_at
+      title: StrategySchema
+    StrategyType:
+      type: string
+      enum:
+      - TREND_FOLLOWING
+      - MOMENTUM
+      - MEAN_REVERSION
+      - CUSTOM
+      title: StrategyType
     SystemStatus:
       properties:
         app_name:
@@ -2644,6 +4364,14 @@ components:
       - kill_switch_state
       - server_time
       title: SystemStatus
+    TimeHorizon:
+      type: string
+      enum:
+      - INTRADAY
+      - SWING
+      - POSITION
+      - LONG_TERM
+      title: TimeHorizon
     TimeInForce:
       type: string
       enum:
@@ -2683,6 +4411,20 @@ components:
       - BUY
       - SELL
       title: TradeSide
+    TradingActionRequest:
+      properties:
+        confirm:
+          type: boolean
+          title: Confirm
+          default: false
+        reason:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Reason
+      type: object
+      title: TradingActionRequest
     TradingState:
       type: string
       enum:
@@ -2691,6 +4433,38 @@ components:
       - TRADING_DISABLED
       - EMERGENCY_STOP
       title: TradingState
+    TradingStatusSchema:
+      properties:
+        trading_state:
+          $ref: '#/components/schemas/TradingState'
+        previous_state:
+          anyOf:
+          - $ref: '#/components/schemas/TradingState'
+          - type: 'null'
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        actor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actor
+        changed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Changed At
+      type: object
+      required:
+      - trading_state
+      - previous_state
+      - reason
+      - actor
+      - changed_at
+      title: TradingStatusSchema
     UnreadCountSchema:
       properties:
         unread:

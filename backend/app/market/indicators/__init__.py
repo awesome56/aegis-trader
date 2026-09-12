@@ -10,6 +10,8 @@ from app.market.indicators.base import (
     RSIResult,
     SMAResult,
     VolumeAnalysisResult,
+    last_value,
+    points,
 )
 from app.market.indicators.bollinger import bollinger
 from app.market.indicators.ema import ema
@@ -31,7 +33,9 @@ __all__ = [
     "atr",
     "bollinger",
     "ema",
+    "last_value",
     "macd",
+    "points",
     "rsi",
     "sma",
     "true_range",

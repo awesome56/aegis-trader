@@ -23,6 +23,7 @@ from app.models.enums import (
     ProposalStatus,
     RiskDecision,
     TimeHorizon,
+    TradeSide,
 )
 
 
@@ -90,23 +91,45 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
 class RiskEvaluation(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "risk_evaluations"
 
-    proposal_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("trade_proposals.id", ondelete="CASCADE"), index=True, nullable=False
+    # Nullable: the deterministic Risk Engine can evaluate a hypothetical request
+    # before a TradeProposal exists (Phase 7 adapts proposals into RiskRequests).
+    proposal_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("trade_proposals.id", ondelete="CASCADE"), index=True
+    )
+    portfolio_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("portfolios.id", ondelete="SET NULL"), index=True
+    )
+    strategy_signal_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("strategy_signals.id", ondelete="SET NULL"), index=True
     )
     decision: Mapped[RiskDecision] = mapped_column(
         Enum(RiskDecision, native_enum=False), nullable=False, index=True
     )
+    source: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
+
+    symbol: Mapped[str | None] = mapped_column(String(32), index=True)
+    side: Mapped[TradeSide | None] = mapped_column(Enum(TradeSide, native_enum=False))
+    requested_quantity: Mapped[Decimal | None] = mapped_column(MONEY)
+    requested_notional: Mapped[Decimal | None] = mapped_column(MONEY)
+    entry_price: Mapped[Decimal | None] = mapped_column(MONEY)
+    stop_loss: Mapped[Decimal | None] = mapped_column(MONEY)
+    take_profit: Mapped[Decimal | None] = mapped_column(MONEY)
+    estimated_risk_amount: Mapped[Decimal | None] = mapped_column(MONEY)
+
     risk_score: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     approved_quantity: Mapped[Decimal | None] = mapped_column(MONEY)
+    approved_notional: Mapped[Decimal | None] = mapped_column(MONEY)
     approved_position_percentage: Mapped[Decimal | None] = mapped_column(MONEY)
     risk_reward_ratio: Mapped[Decimal | None] = mapped_column(MONEY)
+    portfolio_exposure_before_pct: Mapped[Decimal | None] = mapped_column(MONEY)
+    portfolio_exposure_after_pct: Mapped[Decimal | None] = mapped_column(MONEY)
 
     checks: Mapped[list | None] = mapped_column(JSONType)
     reasons: Mapped[list | None] = mapped_column(JSONType)
     warnings: Mapped[list | None] = mapped_column(JSONType)
     settings_snapshot: Mapped[dict | None] = mapped_column(JSONType)
 
-    evaluated_by: Mapped[str] = mapped_column(String(64), default="risk_manager", nullable=False)
+    evaluated_by: Mapped[str] = mapped_column(String(64), default="risk_engine", nullable=False)
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    proposal: Mapped[TradeProposal] = relationship(back_populates="evaluations")
+    proposal: Mapped[TradeProposal | None] = relationship(back_populates="evaluations")

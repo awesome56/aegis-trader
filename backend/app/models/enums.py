@@ -102,6 +102,7 @@ class RiskDecision(StrEnum):
     APPROVED = "APPROVED"
     APPROVED_WITH_WARNINGS = "APPROVED_WITH_WARNINGS"
     REJECTED = "REJECTED"
+    ERROR = "ERROR"
 
 
 class RiskLevel(StrEnum):

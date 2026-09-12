@@ -6,11 +6,21 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import MONEY, Base, JSONType, TimestampMixin, UUIDMixin
-from app.models.enums import SignalDirection, StrategyType, TimeHorizon
+from app.models.enums import MarketRegime, SignalDirection, StrategyType, TimeHorizon
 
 
 class Strategy(UUIDMixin, TimestampMixin, Base):
@@ -40,6 +50,9 @@ class StrategySignal(UUIDMixin, TimestampMixin, Base):
     strategy_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("strategies.id", ondelete="CASCADE"), index=True, nullable=False
     )
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("assets.id", ondelete="SET NULL"), index=True
+    )
     symbol: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
     direction: Mapped[SignalDirection] = mapped_column(
         Enum(SignalDirection, native_enum=False), nullable=False
@@ -49,11 +62,27 @@ class StrategySignal(UUIDMixin, TimestampMixin, Base):
     price: Mapped[Decimal | None] = mapped_column(MONEY)
     timeframe: Mapped[str] = mapped_column(String(16), nullable=False)
     time_horizon: Mapped[TimeHorizon | None] = mapped_column(Enum(TimeHorizon, native_enum=False))
+    market_regime: Mapped[MarketRegime | None] = mapped_column(
+        Enum(MarketRegime, native_enum=False)
+    )
     indicators: Mapped[dict | None] = mapped_column(JSONType)
     signal_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), index=True, nullable=False
     )
+    data_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
 
     strategy: Mapped[Strategy] = relationship(back_populates="signals")
 
-    __table_args__ = (Index("ix_strategy_signals_symbol_signal_time", "symbol", "signal_time"),)
+    __table_args__ = (
+        Index("ix_strategy_signals_symbol_signal_time", "symbol", "signal_time"),
+        Index("ix_strategy_signals_strategy_signal_time", "strategy_id", "signal_time"),
+        UniqueConstraint(
+            "strategy_id",
+            "symbol",
+            "timeframe",
+            "direction",
+            "data_timestamp",
+            name="uq_strategy_signals_dedupe",
+        ),
+    )

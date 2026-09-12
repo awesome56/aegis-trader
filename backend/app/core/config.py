@@ -10,7 +10,7 @@ import json
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 TradingMode = Literal["paper", "live"]
@@ -110,6 +110,65 @@ class Settings(BaseSettings):
     CSV_MARKET_DATA_PATH: str = ""
     CSV_MARKET_DATA_IS_OPEN: bool = True
 
+    # --- Strategies ----------------------------------------------------------
+    # All thresholds are engineering defaults, not investment advice.
+    STRATEGY_AUTO_BOOTSTRAP: bool = True
+    STRATEGY_DEFAULT_TIMEFRAME: str = "1h"
+    STRATEGY_SIGNAL_TTL_MULTIPLIER: float = 2.0
+    # Analysis staleness: refuse evaluation when the newest candle is older than
+    # timeframe_seconds * multiplier (looser than execution freshness).
+    STRATEGY_ANALYSIS_MAX_AGE_MULTIPLIER: float = 3.0
+
+    STRATEGY_TREND_FAST_PERIOD: int = 20
+    STRATEGY_TREND_SLOW_PERIOD: int = 50
+    STRATEGY_TREND_ATR_PERIOD: int = 14
+    STRATEGY_TREND_SLOPE_LOOKBACK: int = 10
+    STRATEGY_TREND_MIN_MA_SPREAD_BPS: float = 10.0
+    STRATEGY_TREND_MIN_CONFIDENCE: float = 0.5
+    STRATEGY_TREND_ALLOW_HIGH_VOLATILITY: bool = False
+
+    STRATEGY_MOMENTUM_RSI_PERIOD: int = 14
+    STRATEGY_MOMENTUM_MACD_FAST_PERIOD: int = 12
+    STRATEGY_MOMENTUM_MACD_SLOW_PERIOD: int = 26
+    STRATEGY_MOMENTUM_MACD_SIGNAL_PERIOD: int = 9
+    STRATEGY_MOMENTUM_VOLUME_PERIOD: int = 20
+    STRATEGY_MOMENTUM_MIN_RELATIVE_VOLUME: float = 1.0
+    STRATEGY_MOMENTUM_MIN_CONFIDENCE: float = 0.5
+    STRATEGY_MOMENTUM_ALLOW_HIGH_VOLATILITY: bool = False
+
+    STRATEGY_MEAN_REVERSION_BOLLINGER_PERIOD: int = 20
+    STRATEGY_MEAN_REVERSION_BOLLINGER_STDDEV: float = 2.0
+    STRATEGY_MEAN_REVERSION_PERCENT_B_LOW: float = 0.05
+    STRATEGY_MEAN_REVERSION_PERCENT_B_HIGH: float = 0.95
+    STRATEGY_MEAN_REVERSION_REQUIRE_CONFIRMATION: bool = True
+    STRATEGY_MEAN_REVERSION_MIN_CONFIDENCE: float = 0.5
+    STRATEGY_MEAN_REVERSION_ALLOW_TRENDING: bool = False
+
+    STRATEGY_RSI_OVERSOLD: float = 30.0
+    STRATEGY_RSI_OVERBOUGHT: float = 70.0
+
+    # --- Market regime -------------------------------------------------------
+    REGIME_FAST_PERIOD: int = 20
+    REGIME_SLOW_PERIOD: int = 50
+    REGIME_ATR_PERIOD: int = 14
+    REGIME_SLOPE_LOOKBACK: int = 10
+    REGIME_TREND_MIN_SPREAD_BPS: float = 10.0
+    REGIME_HIGH_VOLATILITY_ATR_PERCENT: float = 3.0
+    REGIME_LOW_VOLATILITY_ATR_PERCENT: float = 1.0
+
+    # --- Risk engine ---------------------------------------------------------
+    RISK_ENABLED: bool = True
+    # Existing MAX_*/MINIMUM_* settings above are the canonical defaults; the
+    # RiskSettings persisted row overrides them per user.
+    RISK_MAX_RISK_PER_TRADE_PERCENT: float = 1.0
+    RISK_REQUIRE_STRATEGY_SIGNAL: bool = False
+    RISK_UNKNOWN_SECTOR_POLICY: str = "warn"  # reject|allow|warn
+    RISK_DAILY_LOSS_INCLUDE_UNREALIZED: bool = True
+    RISK_COMMISSION_BUFFER_BPS: float = 5.0
+    RISK_WARNING_UTILIZATION_PERCENT: float = 80.0
+    RISK_CRITICAL_UTILIZATION_PERCENT: float = 100.0
+    RISK_DEFAULT_TRADING_STATE: KillSwitchState = "TRADING_ENABLED"
+
     # --- LLM / Agent ---------------------------------------------------------
     LLM_PROVIDER: str = "openai"
     LLM_MODEL: str = ""
@@ -156,6 +215,49 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @model_validator(mode="after")
+    def _validate_ranges(self) -> Settings:
+        """Fail fast on nonsensical strategy/regime/risk configuration."""
+        if self.STRATEGY_TREND_FAST_PERIOD >= self.STRATEGY_TREND_SLOW_PERIOD:
+            raise ValueError("STRATEGY_TREND_FAST_PERIOD must be < STRATEGY_TREND_SLOW_PERIOD")
+        if self.STRATEGY_MOMENTUM_MACD_FAST_PERIOD >= self.STRATEGY_MOMENTUM_MACD_SLOW_PERIOD:
+            raise ValueError("MACD fast period must be < slow period")
+        if self.REGIME_FAST_PERIOD >= self.REGIME_SLOW_PERIOD:
+            raise ValueError("REGIME_FAST_PERIOD must be < REGIME_SLOW_PERIOD")
+        if not 0 < self.STRATEGY_RSI_OVERSOLD < self.STRATEGY_RSI_OVERBOUGHT < 100:
+            raise ValueError("RSI thresholds must satisfy 0 < oversold < overbought < 100")
+        if (
+            self.STRATEGY_MEAN_REVERSION_PERCENT_B_LOW
+            >= self.STRATEGY_MEAN_REVERSION_PERCENT_B_HIGH
+        ):
+            raise ValueError("Mean-reversion percent-B low must be < high")
+        if self.REGIME_HIGH_VOLATILITY_ATR_PERCENT <= self.REGIME_LOW_VOLATILITY_ATR_PERCENT:
+            raise ValueError("High-volatility ATR%% must exceed low-volatility ATR%%")
+        for name in (
+            "MAX_POSITION_PERCENTAGE",
+            "MAX_PORTFOLIO_EXPOSURE",
+            "MAX_DAILY_LOSS_PERCENTAGE",
+            "MAX_DRAWDOWN_PERCENTAGE",
+            "MAX_SECTOR_EXPOSURE",
+            "MAX_ASSET_CLASS_EXPOSURE",
+            "RISK_MAX_RISK_PER_TRADE_PERCENT",
+        ):
+            value = getattr(self, name)
+            if not 0 < value <= 100:
+                raise ValueError(f"{name} must be in (0, 100]")
+        for name in ("MAX_OPEN_POSITIONS", "MAX_TRADES_PER_DAY"):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"{name} must be > 0")
+        if not 0 <= self.MINIMUM_CONFIDENCE <= 1:
+            raise ValueError("MINIMUM_CONFIDENCE must be in [0, 1]")
+        if self.MINIMUM_RISK_REWARD_RATIO <= 0:
+            raise ValueError("MINIMUM_RISK_REWARD_RATIO must be > 0")
+        if self.RISK_WARNING_UTILIZATION_PERCENT >= self.RISK_CRITICAL_UTILIZATION_PERCENT:
+            raise ValueError("Risk warning utilization must be < critical utilization")
+        if self.RISK_UNKNOWN_SECTOR_POLICY not in {"reject", "allow", "warn"}:
+            raise ValueError("RISK_UNKNOWN_SECTOR_POLICY must be reject|allow|warn")
+        return self
 
     @property
     def market_symbols(self) -> list[str]:

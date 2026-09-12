@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import Literal
 
 from app.core.config import Settings, get_settings
 from app.market.domain.models import Candle, FreshnessAssessment, MarketQuote
@@ -51,10 +52,14 @@ class MarketDataFreshnessService:
         )
 
     def _assess(
-        self, kind: str, symbol: str, timestamp: datetime, max_age_seconds: int
+        self,
+        kind: Literal["quote", "candle"],
+        symbol: str,
+        timestamp: datetime,
+        max_age_seconds: int,
     ) -> FreshnessAssessment:
         age = self._age(timestamp)
-        return FreshnessAssessment(  # type: ignore[arg-type]
+        return FreshnessAssessment(
             kind=kind,
             symbol=symbol,
             market_timestamp=timestamp,

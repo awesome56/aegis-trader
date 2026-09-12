@@ -8,7 +8,7 @@ rely on (fail closed on stale data).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +35,7 @@ from app.market.services.cache import MarketDataCache
 from app.market.services.freshness import MarketDataFreshnessService
 from app.market.validation import dedupe_candles, normalize_symbol, validate_candle, validate_quote
 from app.models.asset import Asset
+from app.models.market import MarketCandle as MarketCandleModel
 from app.repositories.asset import AssetRepository
 from app.repositories.market_candle import MarketCandleRepository
 from app.repositories.market_quote import MarketQuoteRepository
@@ -133,7 +134,7 @@ class MarketDataService:
                 logger.debug(
                     "market_candles", symbol=normalized, timeframe=tf.value, source="database"
                 )
-                return stored
+                return [self._from_model(row) for row in stored]
 
         candles = await self._fetch_candles(normalized, tf, start, end, limit)
         return candles
@@ -156,7 +157,7 @@ class MarketDataService:
                         symbol=normalized,
                         timeframe=tf.value,
                     )
-                    return stored
+                    return [self._from_model(row) for row in stored]
             raise
 
         candles = await self._normalise_and_persist(normalized, tf, candles)
@@ -198,6 +199,30 @@ class MarketDataService:
         return await self._provider.health_check()
 
     # --- internals ----------------------------------------------------------
+    @staticmethod
+    def _as_utc(value: datetime | None) -> datetime | None:
+        """SQLite returns naive datetimes; Postgres returns tz-aware. Normalise."""
+        if value is None:
+            return None
+        return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+    def _from_model(self, model: MarketCandleModel) -> Candle:
+        return Candle(
+            symbol=model.symbol,
+            asset_id=model.asset_id,
+            timeframe=Timeframe.parse(model.timeframe),
+            open_time=self._as_utc(model.candle_time) or model.candle_time,
+            close_time=self._as_utc(model.close_time),
+            open=model.open,
+            high=model.high,
+            low=model.low,
+            close=model.close,
+            volume=model.volume,
+            trade_count=model.trade_count,
+            vwap=model.vwap,
+            provider=model.provider,
+        )
+
     def _parse_timeframe(self, timeframe: Timeframe | str) -> Timeframe:
         try:
             return Timeframe.parse(timeframe)

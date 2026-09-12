@@ -9,10 +9,12 @@ requests.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Protocol, TypeVar
 
 from pydantic import BaseModel
+from redis.asyncio import Redis
 
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
@@ -36,15 +38,18 @@ class CacheBackend(Protocol):
 class RedisCacheBackend:
     """Cache backend over the shared Redis client. Failures are non-fatal."""
 
-    def __init__(self, client=None) -> None:  # type: ignore[no-untyped-def]
-        self._client = client or get_redis()
+    def __init__(self, client: Redis | None = None) -> None:
+        self._client: Redis = client or get_redis()
 
     async def get(self, key: str) -> str | None:
         try:
-            return await self._client.get(key)
+            value = await self._client.get(key)
         except Exception as exc:  # noqa: BLE001 - cache must never break requests
             logger.warning("market_cache_get_failed", key=key, error=str(exc))
             return None
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+        return value if isinstance(value, str) else None
 
     async def set(self, key: str, value: str, ttl_seconds: int) -> None:
         try:
@@ -62,7 +67,7 @@ class RedisCacheBackend:
 class InMemoryCacheBackend:
     """Deterministic in-memory backend for tests and single-process fallbacks."""
 
-    def __init__(self, clock=None) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, clock: Callable[[], float] | None = None) -> None:
         self._clock = clock or (lambda: datetime.now(UTC).timestamp())
         self._store: dict[str, tuple[str, float | None]] = {}
 

@@ -4,13 +4,15 @@ services never import concrete providers directly.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from app.core.config import Settings, get_settings
 from app.market.exceptions import ProviderUnavailableError
 from app.market.providers.base import MarketDataProvider
 from app.market.providers.csv import CsvMarketDataProvider
 from app.market.providers.mock import MockMarketDataProvider
 
-_PROVIDER_FACTORIES: dict[str, type[MarketDataProvider]] = {
+_PROVIDER_FACTORIES: dict[str, Callable[[Settings], MarketDataProvider]] = {
     MockMarketDataProvider.name: MockMarketDataProvider,
     CsvMarketDataProvider.name: CsvMarketDataProvider,
 }

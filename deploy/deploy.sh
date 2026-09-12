@@ -48,9 +48,11 @@ if [[ "$WITH_TUNNEL" == "1" ]]; then
 fi
 
 echo "==> waiting for backend health"
+BACKEND_HOST_PORT="$(grep -E '^BACKEND_HOST_PORT=' .env.prod | cut -d= -f2 | tr -d '[:space:]')"
+BACKEND_HOST_PORT="${BACKEND_HOST_PORT:-8899}"
 for _ in $(seq 1 30); do
-  if curl -fsS http://127.0.0.1:8000/api/v1/health/live >/dev/null 2>&1; then
-    echo "backend is live on http://127.0.0.1:8000"
+  if curl -fsS "http://127.0.0.1:${BACKEND_HOST_PORT}/api/v1/health/live" >/dev/null 2>&1; then
+    echo "backend is live on http://127.0.0.1:${BACKEND_HOST_PORT}"
     break
   fi
   sleep 2

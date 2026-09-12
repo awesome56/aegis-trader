@@ -1,0 +1,588 @@
+openapi: 3.1.0
+info:
+  title: Aegis Trader
+  description: AI-assisted, risk-gated automated trading platform. Paper trading only
+    in V1; the LLM can only create trade proposals.
+  version: 0.1.0
+paths:
+  /api/v1/health:
+    get:
+      tags:
+      - health
+      summary: Aggregate health
+      operationId: health_api_v1_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/health/live:
+    get:
+      tags:
+      - health
+      summary: Liveness probe
+      operationId: liveness_api_v1_health_live_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Liveness Api V1 Health Live Get
+  /api/v1/health/ready:
+    get:
+      tags:
+      - health
+      summary: Readiness probe
+      operationId: readiness_api_v1_health_ready_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Readiness Api V1 Health Ready Get
+  /api/v1/auth/registration-open:
+    get:
+      tags:
+      - auth
+      summary: Whether bootstrap registration is allowed
+      operationId: registration_open_api_v1_auth_registration_open_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: boolean
+                type: object
+                title: Response Registration Open Api V1 Auth Registration Open Get
+  /api/v1/auth/register:
+    post:
+      tags:
+      - auth
+      summary: Bootstrap owner
+      operationId: register_api_v1_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/login:
+    post:
+      tags:
+      - auth
+      summary: Login
+      operationId: login_api_v1_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - auth
+      summary: Rotate refresh token
+      operationId: refresh_api_v1_auth_refresh_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Revoke a session
+      operationId: logout_api_v1_auth_logout_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/me:
+    get:
+      tags:
+      - auth
+      summary: Current user
+      operationId: me_api_v1_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+      security:
+      - HTTPBearer: []
+  /api/v1/auth/sessions:
+    get:
+      tags:
+      - auth
+      summary: Active sessions/devices
+      operationId: sessions_api_v1_auth_sessions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SessionRead'
+                type: array
+                title: Response Sessions Api V1 Auth Sessions Get
+      security:
+      - HTTPBearer: []
+  /api/v1/system/status:
+    get:
+      tags:
+      - system
+      summary: System and trading status
+      operationId: status_api_v1_system_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+  /:
+    get:
+      tags:
+      - meta
+      summary: Service banner
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Root  Get
+components:
+  schemas:
+    AuthResponse:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserRead'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+      type: object
+      required:
+      - user
+      - tokens
+      title: AuthResponse
+    ComponentHealth:
+      properties:
+        name:
+          type: string
+          title: Name
+        status:
+          type: string
+          enum:
+          - healthy
+          - unhealthy
+          - not_configured
+          title: Status
+        latency_ms:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latency Ms
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+      type: object
+      required:
+      - name
+      - status
+      title: ComponentHealth
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          enum:
+          - healthy
+          - degraded
+          - unhealthy
+          title: Status
+        service:
+          type: string
+          title: Service
+        version:
+          type: string
+          title: Version
+        environment:
+          type: string
+          title: Environment
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        components:
+          items:
+            $ref: '#/components/schemas/ComponentHealth'
+          type: array
+          title: Components
+      type: object
+      required:
+      - status
+      - service
+      - version
+      - environment
+      - timestamp
+      - components
+      title: HealthResponse
+    LiveTradingGuard:
+      properties:
+        allowed:
+          type: boolean
+          title: Allowed
+        missing_requirements:
+          items:
+            type: string
+          type: array
+          title: Missing Requirements
+      type: object
+      required:
+      - allowed
+      - missing_requirements
+      title: LiveTradingGuard
+    LoginRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          maxLength: 72
+          minLength: 1
+          title: Password
+        device_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Device Name
+      type: object
+      required:
+      - email
+      - password
+      title: LoginRequest
+    LogoutRequest:
+      properties:
+        refresh_token:
+          type: string
+          title: Refresh Token
+      type: object
+      required:
+      - refresh_token
+      title: LogoutRequest
+    Message:
+      properties:
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+      - detail
+      title: Message
+    RefreshRequest:
+      properties:
+        refresh_token:
+          type: string
+          title: Refresh Token
+      type: object
+      required:
+      - refresh_token
+      title: RefreshRequest
+    RegisterRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          maxLength: 72
+          minLength: 12
+          title: Password
+        full_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Full Name
+      type: object
+      required:
+      - email
+      - password
+      title: RegisterRequest
+    SessionRead:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        device_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Device Name
+        ip_address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ip Address
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_used_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Used At
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      type: object
+      required:
+      - id
+      - device_name
+      - ip_address
+      - created_at
+      - last_used_at
+      - expires_at
+      title: SessionRead
+    SystemStatus:
+      properties:
+        app_name:
+          type: string
+          title: App Name
+        version:
+          type: string
+          title: Version
+        environment:
+          type: string
+          title: Environment
+        trading_mode:
+          type: string
+          title: Trading Mode
+        live_trading_enabled:
+          type: boolean
+          title: Live Trading Enabled
+        live_trading_guard:
+          $ref: '#/components/schemas/LiveTradingGuard'
+        broker_provider:
+          type: string
+          title: Broker Provider
+        market_data_provider:
+          type: string
+          title: Market Data Provider
+        agent_enabled:
+          type: boolean
+          title: Agent Enabled
+        kill_switch_state:
+          $ref: '#/components/schemas/TradingState'
+        server_time:
+          type: string
+          format: date-time
+          title: Server Time
+      type: object
+      required:
+      - app_name
+      - version
+      - environment
+      - trading_mode
+      - live_trading_enabled
+      - live_trading_guard
+      - broker_provider
+      - market_data_provider
+      - agent_enabled
+      - kill_switch_state
+      - server_time
+      title: SystemStatus
+    TokenPair:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        refresh_token:
+          type: string
+          title: Refresh Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+        expires_in:
+          type: integer
+          title: Expires In
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      title: TokenPair
+    TradingState:
+      type: string
+      enum:
+      - TRADING_ENABLED
+      - TRADING_PAUSED
+      - TRADING_DISABLED
+      - EMERGENCY_STOP
+      title: TradingState
+    UserRead:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        email:
+          type: string
+          format: email
+          title: Email
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        is_active:
+          type: boolean
+          title: Is Active
+        is_superuser:
+          type: boolean
+          title: Is Superuser
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_login_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Login At
+      type: object
+      required:
+      - id
+      - email
+      - full_name
+      - is_active
+      - is_superuser
+      - created_at
+      - last_login_at
+      title: UserRead
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer

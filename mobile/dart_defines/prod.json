@@ -1,0 +1,5 @@
+{
+  "ENVIRONMENT": "production",
+  "API_BASE_URL": "https://rider.awesometech.com.ng",
+  "WS_BASE_URL": "wss://rider.awesometech.com.ng"
+}

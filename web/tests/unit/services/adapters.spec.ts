@@ -1,0 +1,249 @@
+import { describe, expect, it } from 'vitest'
+import {
+  toDashboardData,
+  toPortfolioSummary,
+  toPosition,
+  toProposal,
+  toProposalPage,
+  toRiskStatus,
+  toStrategySignal,
+  toTrade,
+} from '~/services/api/adapters'
+import type {
+  RawDashboard,
+  RawPortfolioHistory,
+  RawPositionValuation,
+  RawProposal,
+  RawProposalPage,
+  RawTrade,
+  RawTradePage,
+  RawSignal,
+} from '~/services/api/adapters/raw'
+
+const portfolio = {
+  portfolio_id: 'p-1',
+  currency: 'USD',
+  equity: '127480.25',
+  cash: '41250.75',
+  buying_power: '82501.50',
+  invested_amount: '86229.50',
+  market_value: '86229.50',
+  realized_pnl: '5320.10',
+  unrealized_pnl: '1842.35',
+  total_pnl: '27480.25',
+  daily_pnl: '1842.35',
+  daily_return_percent: '1.47',
+  total_return_percent: '27.48',
+  exposure_percent: '67.64',
+  position_count: 4,
+  initial_capital: '100000',
+  updated_at: '2026-01-15T15:00:00+00:00',
+}
+
+const position: RawPositionValuation = {
+  id: 'pos-1',
+  symbol: 'AAPL',
+  asset_name: 'Apple Inc.',
+  asset_class: 'EQUITY',
+  sector: 'Tech',
+  quantity: '10',
+  average_entry_price: '180.00',
+  current_price: '190.00',
+  market_value: '1900.00',
+  cost_basis: '1800.00',
+  weight_percent: '12.5',
+  unrealized_pnl: '100.00',
+  unrealized_return_percent: '5.55',
+  realized_pnl: '0',
+  opened_at: '2026-01-10T15:00:00+00:00',
+  updated_at: '2026-01-15T15:00:00+00:00',
+  price_timestamp: '2026-01-15T15:00:00+00:00',
+  price_stale: false,
+}
+
+const signal: RawSignal = {
+  id: 'sig-1',
+  strategy_id: 'strat-1',
+  strategy_key: 'trend_following',
+  strategy_name: 'Trend Following',
+  symbol: 'AAPL',
+  direction: 'LONG',
+  strength: '0.8',
+  confidence: '0.9',
+  price: '190',
+  timeframe: '1D',
+  time_horizon: 'SWING',
+  market_regime: 'BULLISH',
+  indicators: { rsi: '55' },
+  signal_time: '2026-01-15T15:00:00+00:00',
+  data_timestamp: null,
+  expires_at: null,
+}
+
+const trade: RawTrade = {
+  id: 't-1',
+  symbol: 'AAPL',
+  side: 'BUY',
+  quantity: '10',
+  entry_price: '180',
+  exit_price: '190',
+  pnl: '100',
+  fees: '1',
+  return_pct: '5.5',
+  strategy_id: 'strat-1',
+  proposal_id: null,
+  order_id: 'o-1',
+  opened_at: '2026-01-15T14:00:00+00:00',
+  closed_at: '2026-01-15T15:00:00+00:00',
+}
+
+const proposal: RawProposal = {
+  id: 'pr-1',
+  portfolio_id: 'p-1',
+  strategy_id: 'strat-1',
+  strategy_signal_id: 'sig-1',
+  symbol: 'AAPL',
+  asset_class: 'EQUITY',
+  action: 'BUY',
+  order_type: 'MARKET',
+  source: 'MANUAL',
+  status: 'RISK_APPROVED',
+  proposed_quantity: '10',
+  proposed_position_percentage: '1.5',
+  requested_notional: null,
+  entry_price: '190',
+  limit_price: null,
+  stop_price: null,
+  stop_loss: '180',
+  take_profit: '220',
+  confidence: '0.9',
+  time_horizon: 'SWING',
+  reasoning_summary: 'breakout',
+  market_regime: 'BULLISH',
+  failure_reason: null,
+  expires_at: '2026-01-15T15:05:00+00:00',
+  decided_at: null,
+  executed_at: null,
+  created_at: '2026-01-15T15:00:00+00:00',
+  updated_at: '2026-01-15T15:00:00+00:00',
+}
+
+describe('adapters', () => {
+  it('maps a raw portfolio summary to the frontend shape', () => {
+    const summary = toPortfolioSummary(portfolio as never)
+    expect(summary.invested).toBe('86229.50')
+    expect(summary.open_pnl).toBe('1842.35')
+    expect(summary.daily_return_pct).toBe('1.47')
+    expect(summary.total_return_pct).toBe('27.48')
+    expect(summary.open_positions).toBe(4)
+  })
+
+  it('maps a position valuation', () => {
+    const mapped = toPosition(position)
+    expect(mapped.side).toBe('LONG')
+    expect(mapped.weight_pct).toBe('12.5')
+    expect(mapped.return_pct).toBe('5.55')
+  })
+
+  it('derives risk status from utilization rows', () => {
+    const status = toRiskStatus({
+      portfolio: portfolio as never,
+      riskStatus: 'WARNING',
+      utilizations: [
+        { key: 'portfolio_exposure', current: '67.64', limit: '80', utilization_percent: '84.55', status: 'WARNING', unit: 'percent' },
+        { key: 'open_positions', current: '4', limit: '10', utilization_percent: '40', status: 'SAFE', unit: 'count' },
+        { key: 'trades_today', current: '3', limit: '20', utilization_percent: '15', status: 'SAFE', unit: 'count' },
+        { key: 'drawdown', current: '3.2', limit: '15', utilization_percent: '21.33', status: 'SAFE', unit: 'percent' },
+      ],
+    })
+    expect(status.level).toBe('WARNING')
+    expect(status.max_exposure_pct).toBe('80')
+    expect(status.open_positions).toBe(4)
+    expect(status.max_open_positions).toBe(10)
+    expect(status.trades_today).toBe(3)
+  })
+
+  it('normalises unknown signal directions', () => {
+    const mapped = toStrategySignal({ ...signal, direction: 'SIDEWAYS' } as never)
+    expect(mapped.direction).toBe('NEUTRAL')
+    expect(toStrategySignal(signal).direction).toBe('LONG')
+  })
+
+  it('derives trade status and duration', () => {
+    const mapped = toTrade(trade)
+    expect(mapped.status).toBe('CLOSED')
+    expect(mapped.duration_seconds).toBe(3600)
+    expect(toTrade({ ...trade, closed_at: null }).status).toBe('OPEN')
+  })
+
+  it('maps proposal statuses and pagination', () => {
+    expect(toProposal(proposal).status).toBe('APPROVED')
+    expect(toProposal({ ...proposal, status: 'RISK_REJECTED' }).status).toBe('REJECTED')
+    expect(toProposal({ ...proposal, status: 'DRAFT' }).status).toBe('PENDING')
+
+    const page = toProposalPage({
+      items: [proposal],
+      total: 21,
+      limit: 5,
+      offset: 10,
+    } as RawProposalPage)
+    expect(page.page).toBe(3)
+    expect(page.pageSize).toBe(5)
+    expect(page.total).toBe(21)
+  })
+
+  it('assembles dashboard data from multiple sources', () => {
+    const tradesPage: RawTradePage = { items: [trade], total: 1, page: 1, page_size: 5 }
+    const proposalsPage: RawProposalPage = { items: [proposal], total: 1, limit: 5, offset: 0 }
+    const history: RawPortfolioHistory = {
+      range: '1M',
+      start: null,
+      end: null,
+      point_count: 2,
+      downsampled: false,
+      drawdown_percent: '3.2',
+      points: [
+        { snapshot_time: '2026-01-14T15:00:00+00:00', equity: '100000', cash: '50000', market_value: '50000', realized_pnl: '0', unrealized_pnl: '0', total_return_percent: '0', daily_pnl: '0', exposure_percent: '50', position_count: 1 },
+        { snapshot_time: '2026-01-15T15:00:00+00:00', equity: '101000', cash: '50000', market_value: '51000', realized_pnl: '0', unrealized_pnl: '1000', total_return_percent: '1', daily_pnl: '1000', exposure_percent: '50.5', position_count: 1 },
+      ],
+    }
+    const dashboard: RawDashboard = {
+      portfolio: portfolio as never,
+      trading_mode: 'paper',
+      trading_state: 'TRADING_ENABLED',
+      broker_provider: 'paper',
+      broker_status: 'PAPER',
+      market_data_provider: 'mock',
+      market_data_status: 'MOCK',
+      market_is_open: true,
+      market_session: 'REGULAR',
+      risk_status: 'WARNING',
+      risk_utilizations: [
+        { key: 'trades_today', current: '3', limit: '20', utilization_percent: '15', status: 'SAFE', unit: 'count' },
+      ],
+      recent_signals: [signal],
+      realtime_connections: 1,
+      unread_notifications: 0,
+      drawdown_percent: '3.2',
+      recent_orders: [],
+      recent_notifications: [],
+      availability: {},
+    }
+
+    const data = toDashboardData({
+      dashboard,
+      positions: [position],
+      history,
+      trades: tradesPage,
+      proposals: proposalsPage,
+    })
+
+    expect(data.summary.trades_today).toBe(3)
+    expect(data.summary.agent.enabled).toBe(false)
+    expect(data.top_positions).toHaveLength(1)
+    expect(data.recent_trades).toHaveLength(1)
+    expect(data.recent_proposals).toHaveLength(1)
+    expect(data.strategy_signals).toHaveLength(1)
+    expect(data.equity_history).toHaveLength(2)
+  })
+})

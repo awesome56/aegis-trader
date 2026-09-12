@@ -144,3 +144,22 @@ class ProviderHealthSchema(_Schema):
     latency_ms: float | None
     detail: str | None
     checked_at: datetime
+
+
+class MarketOverviewItemSchema(_Schema):
+    symbol: str
+    name: str | None = None
+    price: Decimal | None = None
+    change_pct: Decimal | None = None
+    volume: int | None = None
+    signal_direction: str | None = None
+    strategy: str | None = None
+    confidence: Decimal | None = None
+    market_regime: str | None = None
+    quote_time: datetime | None = None
+    is_stale: bool = False
+
+
+class MarketOverviewSchema(_Schema):
+    status: MarketStatusSchema
+    items: list[MarketOverviewItemSchema]

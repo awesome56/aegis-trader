@@ -1,5 +1,6 @@
-"""Background workers (Celery/ARQ/Dramatiq integration point).
+"""Background worker package (ARQ + Redis)."""
 
-Phase 1 defines the package only; scheduling arrives with market data, strategy
-evaluation, and portfolio snapshotting in later phases.
-"""
+from app.workers.health import worker_health
+from app.workers.lock import LockNotAcquiredError, redis_lock
+
+__all__ = ["LockNotAcquiredError", "redis_lock", "worker_health"]

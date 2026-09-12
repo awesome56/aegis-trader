@@ -20,6 +20,7 @@ from app.models.enums import (
     MarketRegime,
     OrderAction,
     OrderType,
+    ProposalSource,
     ProposalStatus,
     RiskDecision,
     TimeHorizon,
@@ -36,6 +37,9 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
     strategy_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("strategies.id", ondelete="SET NULL"), index=True
     )
+    strategy_signal_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("strategy_signals.id", ondelete="SET NULL"), index=True
+    )
     agent_run_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("agent_runs.id", ondelete="SET NULL"), index=True
     )
@@ -50,6 +54,9 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
     order_type: Mapped[OrderType] = mapped_column(
         Enum(OrderType, native_enum=False), default=OrderType.MARKET, nullable=False
     )
+    source: Mapped[ProposalSource] = mapped_column(
+        Enum(ProposalSource, native_enum=False), default=ProposalSource.MANUAL, nullable=False
+    )
     status: Mapped[ProposalStatus] = mapped_column(
         Enum(ProposalStatus, native_enum=False),
         default=ProposalStatus.PENDING,
@@ -59,7 +66,10 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
 
     proposed_quantity: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     proposed_position_percentage: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    requested_notional: Mapped[Decimal | None] = mapped_column(MONEY)
     entry_price: Mapped[Decimal | None] = mapped_column(MONEY)
+    limit_price: Mapped[Decimal | None] = mapped_column(MONEY)
+    stop_price: Mapped[Decimal | None] = mapped_column(MONEY)
     stop_loss: Mapped[Decimal | None] = mapped_column(MONEY)
     take_profit: Mapped[Decimal | None] = mapped_column(MONEY)
 
@@ -76,8 +86,11 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
         Enum(MarketRegime, native_enum=False)
     )
 
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     portfolio: Mapped[Portfolio | None] = relationship()  # noqa: F821
     evaluations: Mapped[list[RiskEvaluation]] = relationship(
@@ -85,7 +98,14 @@ class TradeProposal(UUIDMixin, TimestampMixin, Base):
     )
     orders: Mapped[list[Order]] = relationship(back_populates="proposal")  # noqa: F821
 
-    __table_args__ = (Index("ix_trade_proposals_status_created", "status", "created_at"),)
+    __table_args__ = (
+        Index("ix_trade_proposals_status_created", "status", "created_at"),
+        Index(
+            "uq_trade_proposals_idempotency_key",
+            "idempotency_key",
+            unique=True,
+        ),
+    )
 
 
 class RiskEvaluation(UUIDMixin, TimestampMixin, Base):

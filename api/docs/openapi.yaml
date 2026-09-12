@@ -227,6 +227,23 @@ paths:
                 $ref: '#/components/schemas/MarketStatusSchema'
       security:
       - HTTPBearer: []
+  /api/v1/markets/overview:
+    get:
+      tags:
+      - markets
+      summary: Watchlist overview
+      description: Configured symbol universe with quotes and the latest strategy
+        signal.
+      operationId: market_overview_api_v1_markets_overview_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketOverviewSchema'
+      security:
+      - HTTPBearer: []
   /api/v1/markets/search:
     get:
       tags:
@@ -1560,6 +1577,360 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
+  /api/v1/activity:
+    get:
+      tags:
+      - activity
+      summary: Audit activity timeline
+      operationId: list_activity_api_v1_activity_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: source
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by component/source
+          title: Source
+        description: Filter by component/source
+      - name: severity
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/NotificationSeverity'
+          - type: 'null'
+          title: Severity
+      - name: event_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Event type prefix filter
+          title: Event Type
+        description: Event type prefix filter
+      - name: start
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: ISO 8601 start
+          title: Start
+        description: ISO 8601 start
+      - name: end
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: ISO 8601 end
+          title: End
+        description: ISO 8601 end
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/trades:
+    get:
+      tags:
+      - trades
+      summary: List completed trades
+      operationId: list_trades_api_v1_trades_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Symbol
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradePageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/trades/{trade_id}:
+    get:
+      tags:
+      - trades
+      summary: Trade detail
+      operationId: get_trade_api_v1_trades__trade_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: trade_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Trade Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/proposals:
+    post:
+      tags:
+      - proposals
+      summary: Create Proposal
+      operationId: create_proposal_api_v1_proposals_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposalCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - proposals
+      summary: List Proposals
+      operationId: list_proposals_api_v1_proposals_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/ProposalStatus'
+          - type: 'null'
+          title: Status
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/proposals/{proposal_id}:
+    get:
+      tags:
+      - proposals
+      summary: Get Proposal
+      operationId: get_proposal_api_v1_proposals__proposal_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: proposal_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Proposal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalDetailSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/proposals/{proposal_id}/evaluate:
+    post:
+      tags:
+      - proposals
+      summary: Evaluate Proposal
+      operationId: evaluate_proposal_api_v1_proposals__proposal_id__evaluate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: proposal_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Proposal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalEvaluationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/proposals/{proposal_id}/execute:
+    post:
+      tags:
+      - proposals
+      summary: Execute Proposal
+      operationId: execute_proposal_api_v1_proposals__proposal_id__execute_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: proposal_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Proposal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionOutcome'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/proposals/{proposal_id}/cancel:
+    post:
+      tags:
+      - proposals
+      summary: Cancel Proposal
+      operationId: cancel_proposal_api_v1_proposals__proposal_id__cancel_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: proposal_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Proposal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -1578,6 +1949,79 @@ paths:
                 title: Response Root  Get
 components:
   schemas:
+    ActivityEventSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        event_type:
+          type: string
+          title: Event Type
+        severity:
+          type: string
+          title: Severity
+        source:
+          type: string
+          title: Source
+        message:
+          type: string
+          title: Message
+        actor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actor
+        correlation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Correlation Id
+        payload:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Payload
+        occurred_at:
+          type: string
+          format: date-time
+          title: Occurred At
+      type: object
+      required:
+      - id
+      - event_type
+      - severity
+      - source
+      - message
+      - actor
+      - correlation_id
+      - payload
+      - occurred_at
+      title: ActivityEventSchema
+    ActivityPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ActivityEventSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: ActivityPageSchema
     AllocationBreakdown:
       properties:
         total_equity:
@@ -1630,6 +2074,17 @@ components:
       - value
       - weight_percent
       title: AllocationSlice
+    AssetClass:
+      type: string
+      enum:
+      - EQUITY
+      - ETF
+      - CRYPTO
+      - FOREX
+      - FUTURE
+      - OPTION
+      - COMMODITY
+      title: AssetClass
     AssetSearchSchema:
       properties:
         symbol:
@@ -2333,6 +2788,109 @@ components:
       - INSUFFICIENT_DATA
       - STALE_DATA
       title: EvaluationStatus
+    ExecutionOutcome:
+      properties:
+        proposal_id:
+          type: string
+          format: uuid
+          title: Proposal Id
+        executed:
+          type: boolean
+          title: Executed
+        status:
+          type: string
+          title: Status
+        order_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Order Id
+        final_evaluation_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Final Evaluation Id
+        final_decision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Final Decision
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      type: object
+      required:
+      - proposal_id
+      - executed
+      - status
+      title: ExecutionOutcome
+      description: Deterministic result of an OrderManager execution attempt.
+    ExecutionSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        order_id:
+          type: string
+          format: uuid
+          title: Order Id
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Price
+        gross_amount:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Gross Amount
+        net_amount:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Net Amount
+        fees:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Fees
+        commission:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Commission
+        slippage:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Slippage
+        liquidity:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Liquidity
+        executed_at:
+          type: string
+          format: date-time
+          title: Executed At
+      type: object
+      required:
+      - id
+      - order_id
+      - quantity
+      - price
+      - fees
+      - commission
+      - slippage
+      - executed_at
+      title: ExecutionSchema
     HTTPValidationError:
       properties:
         detail:
@@ -2597,6 +3155,82 @@ components:
       - next_close
       - provider
       title: MarketClockSchema
+    MarketOverviewItemSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Price
+        change_pct:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Change Pct
+        volume:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Volume
+        signal_direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Signal Direction
+        strategy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Strategy
+        confidence:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Confidence
+        market_regime:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Regime
+        quote_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Quote Time
+        is_stale:
+          type: boolean
+          title: Is Stale
+          default: false
+      type: object
+      required:
+      - symbol
+      title: MarketOverviewItemSchema
+    MarketOverviewSchema:
+      properties:
+        status:
+          $ref: '#/components/schemas/MarketStatusSchema'
+        items:
+          items:
+            $ref: '#/components/schemas/MarketOverviewItemSchema'
+          type: array
+          title: Items
+      type: object
+      required:
+      - status
+      - items
+      title: MarketOverviewSchema
     MarketRegime:
       type: string
       enum:
@@ -2734,6 +3368,22 @@ components:
       - payload
       - created_at
       title: NotificationSchema
+    NotificationSeverity:
+      type: string
+      enum:
+      - INFO
+      - WARNING
+      - CRITICAL
+      title: NotificationSeverity
+    OrderAction:
+      type: string
+      enum:
+      - BUY
+      - SELL
+      - HOLD
+      - CLOSE
+      - REDUCE
+      title: OrderAction
     OrderCreateRequest:
       properties:
         symbol:
@@ -3039,6 +3689,327 @@ components:
       - realized_pnl
       - opened_at
       title: PositionValuation
+    ProposalCreate:
+      properties:
+        symbol:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        order_type:
+          $ref: '#/components/schemas/OrderType'
+          default: MARKET
+        quantity:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Quantity
+        notional:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Notional
+        limit_price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Limit Price
+        stop_price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Price
+        stop_loss:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Loss
+        take_profit:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Take Profit
+        strategy_signal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Signal Id
+        time_horizon:
+          $ref: '#/components/schemas/TimeHorizon'
+          default: SWING
+        confidence:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Confidence
+          default: '0.5'
+        reasoning_summary:
+          anyOf:
+          - type: string
+            maxLength: 1000
+          - type: 'null'
+          title: Reasoning Summary
+        idempotency_key:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Idempotency Key
+      type: object
+      required:
+      - symbol
+      - side
+      title: ProposalCreate
+      description: Manual TradeProposal creation payload (no execution).
+    ProposalDetailSchema:
+      properties:
+        proposal:
+          $ref: '#/components/schemas/ProposalSchema'
+        evaluations:
+          items:
+            $ref: '#/components/schemas/RiskEvaluationSchema'
+          type: array
+          title: Evaluations
+        orders:
+          items:
+            $ref: '#/components/schemas/BrokerOrderSchema'
+          type: array
+          title: Orders
+        executions:
+          items:
+            $ref: '#/components/schemas/ExecutionSchema'
+          type: array
+          title: Executions
+      type: object
+      required:
+      - proposal
+      title: ProposalDetailSchema
+    ProposalEvaluationResponse:
+      properties:
+        proposal:
+          $ref: '#/components/schemas/ProposalSchema'
+        evaluation:
+          $ref: '#/components/schemas/RiskEvaluationSchema'
+      type: object
+      required:
+      - proposal
+      - evaluation
+      title: ProposalEvaluationResponse
+    ProposalPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProposalSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        limit:
+          type: integer
+          title: Limit
+        offset:
+          type: integer
+          title: Offset
+      type: object
+      required:
+      - items
+      - total
+      - limit
+      - offset
+      title: ProposalPageSchema
+    ProposalSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        portfolio_id:
+          type: string
+          format: uuid
+          title: Portfolio Id
+        strategy_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Id
+        strategy_signal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Signal Id
+        symbol:
+          type: string
+          title: Symbol
+        asset_class:
+          $ref: '#/components/schemas/AssetClass'
+        action:
+          $ref: '#/components/schemas/OrderAction'
+        order_type:
+          $ref: '#/components/schemas/OrderType'
+        source:
+          $ref: '#/components/schemas/ProposalSource'
+        status:
+          $ref: '#/components/schemas/ProposalStatus'
+        proposed_quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Proposed Quantity
+        proposed_position_percentage:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Proposed Position Percentage
+        requested_notional:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Requested Notional
+        entry_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Entry Price
+        limit_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Limit Price
+        stop_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Price
+        stop_loss:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Loss
+        take_profit:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Take Profit
+        confidence:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Confidence
+        time_horizon:
+          $ref: '#/components/schemas/TimeHorizon'
+        reasoning_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reasoning Summary
+        market_regime:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Regime
+        failure_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Reason
+        expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Expires At
+        decided_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Decided At
+        executed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Executed At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - portfolio_id
+      - symbol
+      - asset_class
+      - action
+      - order_type
+      - source
+      - status
+      - proposed_quantity
+      - confidence
+      - time_horizon
+      - created_at
+      - updated_at
+      title: ProposalSchema
+    ProposalSource:
+      type: string
+      enum:
+      - MANUAL
+      - STRATEGY
+      - AGENT
+      title: ProposalSource
+    ProposalStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PENDING
+      - PENDING_RISK
+      - RISK_APPROVED
+      - RISK_REJECTED
+      - READY_FOR_EXECUTION
+      - EXECUTING
+      - EXECUTED
+      - APPROVED
+      - REJECTED
+      - EXPIRED
+      - CANCELLED
+      - FAILED
+      title: ProposalStatus
     QuoteSchema:
       properties:
         symbol:
@@ -4405,6 +5376,111 @@ components:
       - refresh_token
       - expires_in
       title: TokenPair
+    TradePageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TradeSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: TradePageSchema
+    TradeSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        symbol:
+          type: string
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        entry_price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Entry Price
+        exit_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Exit Price
+        pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Pnl
+        fees:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Fees
+        return_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Return Pct
+        strategy_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Id
+        proposal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proposal Id
+        order_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Order Id
+        opened_at:
+          type: string
+          format: date-time
+          title: Opened At
+        closed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Closed At
+      type: object
+      required:
+      - id
+      - symbol
+      - side
+      - quantity
+      - entry_price
+      - exit_price
+      - pnl
+      - fees
+      - return_pct
+      - strategy_id
+      - proposal_id
+      - order_id
+      - opened_at
+      - closed_at
+      title: TradeSchema
     TradeSide:
       type: string
       enum:

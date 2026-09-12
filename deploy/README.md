@@ -142,7 +142,38 @@ Environment (in `.env.prod`):
 | `NUXT_PUBLIC_WS_BASE_URL` | `wss://traderbackend.awesometech.com.ng` |
 | `NUXT_PUBLIC_USE_MOCK_API` | `false` (always, in the compose service) |
 
+## 7. Background worker (`aegis-worker`)
+
+Phase 7 adds an ARQ worker sharing the backend image. It runs three periodic
+jobs and never submits orders (all execution goes through the web API →
+Risk Engine → OrderManager → Broker):
+
+| Job | Default cadence | Purpose |
+|-----|-----------------|---------|
+| `portfolio_snapshot` | every 5 min | Interval-bucketed portfolio snapshots (idempotent). |
+| `evaluate_strategies` | every 60 s | Persists de-duplicated strategy signals only. |
+| `monitor_open_orders` | every 10 s | Counts non-terminal orders (paper fills are synchronous). |
+
+It writes a Redis heartbeat (`aegis:worker:heartbeat`) surfaced by
+`GET /api/v1/health` as the `worker` component, and holds per-job locks
+(`aegis:worker:lock:*`) so slow runs never overlap.
+
+```bash
+# start / update
+ssh lenovo 'cd ~/aegis-trader && docker compose --env-file .env.prod \
+  -f docker-compose.prod.yml up -d --build worker'
+
+# logs
+ssh lenovo 'docker logs -f aegis-worker'
+```
+
+The worker does **not** run migrations (`RUN_MIGRATIONS: "false"`); the backend
+owns the schema.
+
 ## Notes / cautions
+
+- CI (`.github/workflows/ci.yml`) runs backend lint/types/migrations/tests, web
+  lint/typecheck/tests and Flutter analyze/tests on every push and PR.
 
 - The server already runs other services (nginx, Postgres on 127.0.0.1:5432,
   apps on 8228/8290). This stack deliberately does **not** publish the DB/Redis

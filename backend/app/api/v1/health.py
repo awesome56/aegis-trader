@@ -15,6 +15,7 @@ from app.database.session import check_database
 from app.market.enums import ProviderStatus
 from app.market.providers.factory import get_market_data_provider
 from app.schemas.health import ComponentHealth, ComponentState, HealthResponse
+from app.workers.health import worker_health
 
 router = APIRouter(tags=["health"])
 
@@ -61,6 +62,7 @@ async def health() -> HealthResponse:
         _timed_bool(check_redis()),
     )
     market = await _market_data_health()
+    worker_state, worker_detail = await worker_health(settings)
 
     components = [
         ComponentHealth(
@@ -74,6 +76,7 @@ async def health() -> HealthResponse:
             latency_ms=round(redis_ms, 2),
         ),
         market,
+        ComponentHealth(name="worker", status=worker_state, detail=worker_detail),
     ]
     all_ok = db_ok and redis_ok and market.status in {"healthy", "degraded"}
     return HealthResponse(

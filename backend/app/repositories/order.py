@@ -70,6 +70,15 @@ class OrderRepository(BaseRepository[Order]):
         )
         return int(await self.session.scalar(stmt) or 0)
 
+    async def list_by_proposal(self, proposal_id: uuid.UUID) -> list[Order]:
+        stmt = (
+            select(Order)
+            .where(Order.proposal_id == proposal_id)
+            .order_by(Order.created_at.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def list_open_for_account(self, broker_account_id: uuid.UUID) -> list[Order]:
         """Orders that are still working (including partially filled)."""
         open_statuses = [

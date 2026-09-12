@@ -52,12 +52,25 @@ class OrderStatus(StrEnum):
 
 
 class ProposalStatus(StrEnum):
+    DRAFT = "DRAFT"
     PENDING = "PENDING"
+    PENDING_RISK = "PENDING_RISK"
+    RISK_APPROVED = "RISK_APPROVED"
+    RISK_REJECTED = "RISK_REJECTED"
+    READY_FOR_EXECUTION = "READY_FOR_EXECUTION"
+    EXECUTING = "EXECUTING"
+    EXECUTED = "EXECUTED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     EXPIRED = "EXPIRED"
-    EXECUTED = "EXECUTED"
     CANCELLED = "CANCELLED"
+    FAILED = "FAILED"
+
+
+class ProposalSource(StrEnum):
+    MANUAL = "MANUAL"
+    STRATEGY = "STRATEGY"
+    AGENT = "AGENT"
 
 
 class PositionSide(StrEnum):

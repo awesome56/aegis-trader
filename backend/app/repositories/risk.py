@@ -34,6 +34,15 @@ class SystemStateRepository(BaseRepository[SystemState]):
 class RiskEvaluationRepository(BaseRepository[RiskEvaluation]):
     model = RiskEvaluation
 
+    async def list_for_proposal(self, proposal_id: uuid.UUID) -> list[RiskEvaluation]:
+        stmt = (
+            select(RiskEvaluation)
+            .where(RiskEvaluation.proposal_id == proposal_id)
+            .order_by(RiskEvaluation.created_at.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def list_evaluations(
         self,
         *,

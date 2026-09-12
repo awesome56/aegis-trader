@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import DbSession, get_current_user
 from app.market.dependencies import IndicatorDep, MarketDataDep
 from app.market.enums import Timeframe
 from app.schemas.indicators import IndicatorResponseSchema
@@ -19,6 +19,8 @@ from app.schemas.market import (
     AssetSearchSchema,
     CandleSchema,
     CandleSeriesSchema,
+    MarketOverviewItemSchema,
+    MarketOverviewSchema,
     MarketStatusSchema,
     QuoteSchema,
 )
@@ -35,6 +37,57 @@ _TIMEFRAME_DESCRIPTION = "Candle timeframe: " + ", ".join(member.value for membe
 @router.get("/status", response_model=MarketStatusSchema, summary="Market session status")
 async def market_status(service: MarketDataDep) -> MarketStatusSchema:
     return MarketStatusSchema.from_domain(await service.get_market_status())
+
+
+@router.get("/overview", response_model=MarketOverviewSchema, summary="Watchlist overview")
+async def market_overview(service: MarketDataDep, session: DbSession) -> MarketOverviewSchema:
+    """Configured symbol universe with quotes and the latest strategy signal."""
+    from decimal import Decimal
+
+    from app.core.config import get_settings
+    from app.repositories.strategy import StrategySignalRepository
+
+    settings = get_settings()
+    signals = await StrategySignalRepository(session).list_signals(limit=500)
+    latest: dict[str, object] = {}
+    for signal in signals:
+        latest.setdefault(signal.symbol, signal)
+
+    items: list[MarketOverviewItemSchema] = []
+    for symbol in settings.market_symbols:
+        try:
+            quote = await service.get_quote(symbol)
+        except Exception:  # noqa: BLE001, S112 - skip unavailable symbols
+            continue
+        assessment = service.freshness.assess_quote(quote)
+        change_pct = None
+        if quote.previous_close and quote.previous_close != 0:
+            change_pct = (
+                (quote.last - quote.previous_close) / quote.previous_close * Decimal("100")
+            )
+        signal = latest.get(symbol)
+        asset = await service.get_asset(symbol)
+        items.append(
+            MarketOverviewItemSchema(
+                symbol=symbol,
+                name=asset.name if asset else None,
+                price=quote.last,
+                change_pct=change_pct,
+                volume=quote.volume,
+                signal_direction=signal.direction.value if signal else None,
+                strategy=signal.strategy.slug if signal and signal.strategy else None,
+                confidence=signal.confidence if signal else None,
+                market_regime=signal.market_regime.value
+                if signal and signal.market_regime
+                else None,
+                quote_time=quote.market_timestamp,
+                is_stale=assessment.is_stale,
+            )
+        )
+    return MarketOverviewSchema(
+        status=MarketStatusSchema.from_domain(await service.get_market_status()),
+        items=items,
+    )
 
 
 @router.get("/search", response_model=list[AssetSearchSchema], summary="Search assets")

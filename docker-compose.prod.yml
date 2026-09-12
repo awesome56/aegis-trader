@@ -58,6 +58,29 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Background worker (ARQ + Redis): snapshots, strategy evaluation, order probe.
+  # Shares the backend image; does not run migrations (backend owns them).
+  worker:
+    build:
+      context: ./backend
+      target: runtime
+    image: aegis-backend:latest
+    container_name: aegis-worker
+    command: ["python", "-m", "arq", "app.workers.main.WorkerSettings"]
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-trader}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-trader}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_ENABLED: "true"
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Browser terminal (Nuxt SPA). Public hostname: trader.awesometech.com.ng
   web:
     build:

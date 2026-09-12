@@ -51,6 +51,27 @@ services:
       - ./backend:/app
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
+  worker:
+    build:
+      context: ./backend
+      target: runtime
+    container_name: aegis-worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-trader}:${POSTGRES_PASSWORD:-trader}@db:5432/${POSTGRES_DB:-trader}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_ENABLED: "true"
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: ["python", "-m", "arq", "app.workers.main.WorkerSettings", "--watch", "app"]
+
 volumes:
   pgdata:
   redisdata:

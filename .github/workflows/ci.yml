@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests, migrations)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: sqlite+aiosqlite:///./ci.db
+      JWT_SECRET: ci-secret-value-that-is-long-enough-1234567890
+      ENVIRONMENT: test
+      REDIS_URL: redis://127.0.0.1:6399/0
+      TRADING_MODE: paper
+      LIVE_TRADING_ENABLED: "false"
+      LOG_LEVEL: WARNING
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Ruff
+        run: ruff check app tests
+      - name: Mypy (risk-critical modules)
+        run: mypy app/strategies app/risk app/proposals
+      - name: Migrations apply + are in sync
+        run: |
+          alembic upgrade head
+          alembic check
+      - name: Tests
+        run: pytest -q
+
+  web:
+    name: Web (lint, typecheck, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm run test
+
+  mobile:
+    name: Flutter (analyze, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: Tests
+        run: flutter test

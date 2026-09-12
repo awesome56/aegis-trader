@@ -63,6 +63,32 @@ class RiskEvaluationSchema(_Schema):
     warnings: list[str]
     evaluated_at: datetime
 
+    @classmethod
+    def from_model(cls, row) -> RiskEvaluationSchema:  # noqa: ANN001
+        return cls(
+            id=row.id,
+            decision=row.decision,
+            symbol=row.symbol or "",
+            side=TradeSide(row.side) if row.side else TradeSide.BUY,
+            source=row.source,
+            requested_quantity=row.requested_quantity or Decimal("0"),
+            approved_quantity=row.approved_quantity,
+            requested_notional=row.requested_notional or Decimal("0"),
+            approved_notional=row.approved_notional,
+            entry_price=row.entry_price,
+            stop_loss=row.stop_loss,
+            take_profit=row.take_profit,
+            estimated_risk_amount=row.estimated_risk_amount,
+            risk_reward_ratio=row.risk_reward_ratio,
+            portfolio_exposure_before_percent=row.portfolio_exposure_before_pct or Decimal("0"),
+            portfolio_exposure_after_percent=row.portfolio_exposure_after_pct,
+            risk_score=row.risk_score,
+            rules=row.checks or [],
+            reasons=row.reasons or [],
+            warnings=row.warnings or [],
+            evaluated_at=row.evaluated_at,
+        )
+
 
 class RiskEvaluationPageSchema(_Schema):
     items: list[RiskEvaluationSchema]

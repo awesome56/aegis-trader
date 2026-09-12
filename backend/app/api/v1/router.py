@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    activity,
     auth,
     broker,
     dashboard,
@@ -13,9 +14,11 @@ from app.api.v1 import (
     notifications,
     portfolio,
     positions,
+    proposals,
     risk,
     strategies,
     system,
+    trades,
 )
 
 api_router = APIRouter()
@@ -30,5 +33,8 @@ api_router.include_router(broker.router)
 api_router.include_router(notifications.router)
 api_router.include_router(strategies.router)
 api_router.include_router(risk.router)
+api_router.include_router(activity.router)
+api_router.include_router(trades.router)
+api_router.include_router(proposals.router)
 
-# Phase 7+ routers (orders pipeline, agent, backtests) will be attached here.
+# Phase 7 proposal router is attached in app.api.v1.proposals and included below.

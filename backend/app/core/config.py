@@ -80,6 +80,19 @@ class Settings(BaseSettings):
     # --- Realtime ------------------------------------------------------------
     WEBSOCKET_HEARTBEAT_SECONDS: int = 30
 
+    # --- Execution / proposals (Phase 7) -------------------------------------
+    TRADE_PROPOSAL_TTL_SECONDS: int = 300
+    EXECUTION_MAX_PRICE_DEVIATION_BPS: float = 50.0
+    EXECUTION_REQUIRE_FINAL_RISK_REVALIDATION: bool = True
+
+    # --- Worker / scheduler (Track C) ----------------------------------------
+    WORKER_ENABLED: bool = True
+    WORKER_OPEN_ORDER_INTERVAL_SECONDS: int = 10
+    WORKER_PORTFOLIO_SNAPSHOT_INTERVAL_SECONDS: int = 300
+    WORKER_STRATEGY_EVALUATION_INTERVAL_SECONDS: int = 60
+    WORKER_LOCK_TTL_SECONDS: int = 60
+    WORKER_STRATEGY_SYMBOLS: str = ""  # comma-separated; falls back to MOCK_MARKET_SYMBOLS
+
     # --- Market data ---------------------------------------------------------
     MARKET_DATA_PROVIDER: str = "mock"
     # Legacy aliases (superseded by the explicit settings below; retained for
@@ -264,6 +277,17 @@ class Settings(BaseSettings):
         """Configured mock/generic symbol universe, normalised and de-duplicated."""
         seen: dict[str, None] = {}
         for raw in self.MOCK_MARKET_SYMBOLS.split(","):
+            symbol = raw.strip().upper()
+            if symbol:
+                seen.setdefault(symbol, None)
+        return list(seen)
+
+    @property
+    def worker_strategy_symbols(self) -> list[str]:
+        """Symbols the strategy-evaluation worker should run; defaults to the universe."""
+        source = self.WORKER_STRATEGY_SYMBOLS or self.MOCK_MARKET_SYMBOLS
+        seen: dict[str, None] = {}
+        for raw in source.split(","):
             symbol = raw.strip().upper()
             if symbol:
                 seen.setdefault(symbol, None)

@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,7 +67,12 @@ class RiskEngine:
         self._assets = AssetRepository(session)
 
     async def evaluate(
-        self, request: RiskRequest, *, persist: bool = True, actor: str | None = None
+        self,
+        request: RiskRequest,
+        *,
+        persist: bool = True,
+        actor: str | None = None,
+        proposal_id: UUID | None = None,
     ) -> RiskEvaluationResult:
         now = self._clock()
         symbol = normalize_symbol(request.symbol)
@@ -200,7 +206,7 @@ class RiskEngine:
         evaluation_id = None
         if persist:
             model = RiskEvaluation(
-                proposal_id=None,
+                proposal_id=proposal_id,
                 portfolio_id=portfolio.id,
                 strategy_signal_id=request.strategy_signal_id,
                 decision=decision,

@@ -78,8 +78,8 @@ sudo certbot --nginx -d rider.awesometech.com.ng
 cd ~/aegis-trader
 git pull
 ./deploy/deploy.sh                       # rebuild + restart, migrations run automatically
-docker compose -f docker-compose.prod.yml logs -f backend
-docker compose -f docker-compose.prod.yml ps
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f backend
+docker compose --env-file .env.prod -f docker-compose.prod.yml ps
 ```
 
 ## Notes / cautions

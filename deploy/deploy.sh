@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-COMPOSE=(docker compose -f docker-compose.prod.yml)
+COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
 WITH_TUNNEL=0
 SEED_EMAIL=""
 SEED_PASSWORD=""

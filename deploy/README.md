@@ -1,4 +1,4 @@
-# Deploying to the Lenovo server (`lenovo` / `rider.awesometech.com.ng`)
+# Deploying to the Lenovo server (`lenovo` / `traderbackend.awesometech.com.ng`)
 
 Server: Ubuntu 24.04, 4 vCPU, 7.6 GB RAM, `192.168.1.10` behind NAT, Tailscale
 `100.119.144.46`. Docker is **not** pre-installed; the steps below install it.
@@ -46,38 +46,44 @@ The API is then reachable **on the server** at
 No router changes and TLS is handled by Cloudflare.
 
 This server already runs the shared `examco-tunnel` (`77474f43-…`, service
-`cloudflared`) that fronts `agent`, `files`, `qa`, `power`, etc. `rider` was
+`cloudflared`) that fronts `agent`, `files`, `qa`, `power`, etc. The backend was
 added to that same tunnel, so no new tunnel is required.
 
 ```bash
-# one-off (already done):
-sudo python3 deploy/cloudflare/add_ingress.py \
-    rider.awesometech.com.ng http://localhost:8899
-cloudflared tunnel route dns examco-tunnel rider.awesometech.com.ng
+# one-off (already done) — idempotent helper in deploy/cloudflare/:
+sudo python3 deploy/cloudflare/manage_ingress.py add \
+    traderbackend.awesometech.com.ng http://localhost:8899
+cloudflared tunnel route dns examco-tunnel traderbackend.awesometech.com.ng
 sudo systemctl restart cloudflared
 ```
+
+> **Why a one-level subdomain?** Cloudflare's free Universal SSL certificate
+> covers `awesometech.com.ng` and `*.awesometech.com.ng` only. A two-level host
+> such as `trader.backend.awesometech.com.ng` is **not** on that certificate, so
+> HTTPS handshakes fail. Use `traderbackend.awesometech.com.ng`, or enable
+> Total TLS / Advanced Certificate Manager in Cloudflare to use deeper names.
 
 Live check:
 
 ```bash
-curl https://rider.awesometech.com.ng/api/v1/health
+curl https://traderbackend.awesometech.com.ng/api/v1/health
 ```
 
 ### Option B: router port-forwarding + host nginx + Let's Encrypt
 
 1. Forward WAN ports 80 and 443 to `192.168.1.10` on the router.
 2. Point a Cloudflare **DNS-only (grey cloud)** A record for
-   `rider.awesometech.com.ng` at the public IP.
+   `traderbackend.awesometech.com.ng` at the public IP.
 3. Install the nginx site and enable TLS:
 
 ```bash
-sudo cp deploy/nginx/rider.awesometech.com.ng.conf \
-        /etc/nginx/sites-available/rider.awesometech.com.ng
-sudo ln -s /etc/nginx/sites-available/rider.awesometech.com.ng \
+sudo cp deploy/nginx/traderbackend.awesometech.com.ng.conf \
+        /etc/nginx/sites-available/traderbackend.awesometech.com.ng
+sudo ln -s /etc/nginx/sites-available/traderbackend.awesometech.com.ng \
            /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d rider.awesometech.com.ng
+sudo certbot --nginx -d traderbackend.awesometech.com.ng
 ```
 
 ## 4. Operations
@@ -101,10 +107,10 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T backend \
 
 | Item | Value |
 |------|-------|
-| Public API | https://rider.awesometech.com.ng |
-| OpenAPI YAML | https://rider.awesometech.com.ng/api/docs/openapi.yaml |
-| ReDoc | https://rider.awesometech.com.ng/api/docs |
-| Health | https://rider.awesometech.com.ng/api/v1/health |
+| Public API | https://traderbackend.awesometech.com.ng |
+| OpenAPI YAML | https://traderbackend.awesometech.com.ng/api/docs/openapi.yaml |
+| ReDoc | https://traderbackend.awesometech.com.ng/api/docs |
+| Health | https://traderbackend.awesometech.com.ng/api/v1/health |
 | Backend bind | `127.0.0.1:8899` (Docker → container :8000) |
 | Tunnel | shared `examco-tunnel` (`cloudflared.service`) |
 | Trading mode | paper (live interlock locked) |

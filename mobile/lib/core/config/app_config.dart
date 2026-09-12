@@ -16,12 +16,12 @@ class AppConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://rider.awesometech.com.ng',
+    defaultValue: 'https://traderbackend.awesometech.com.ng',
   );
 
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'wss://rider.awesometech.com.ng',
+    defaultValue: 'wss://traderbackend.awesometech.com.ng',
   );
 
   static const String apiPrefix = '/api/v1';

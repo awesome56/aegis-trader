@@ -58,7 +58,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Cloudflare Tunnel: exposes backend publicly at rider.awesometech.com.ng
+  # Cloudflare Tunnel: exposes backend publicly at traderbackend.awesometech.com.ng
   # without opening any router port. Enable with `--profile tunnel`.
   cloudflared:
     image: cloudflare/cloudflared:latest

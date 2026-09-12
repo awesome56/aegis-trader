@@ -184,7 +184,7 @@ cd backend && source .venv/bin/activate && python -m scripts.export_openapi
 ## Deployment
 
 The backend is **live on the Lenovo server at
-https://rider.awesometech.com.ng** (paper mode, Docker + shared Cloudflare
+https://traderbackend.awesometech.com.ng** (paper mode, Docker + shared Cloudflare
 Tunnel). See [`deploy/README.md`](deploy/README.md) for the full runbook and
 current status.
 

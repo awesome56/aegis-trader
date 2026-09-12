@@ -4,7 +4,7 @@ Flutter monitoring and control client. The app talks **only** to the Aegis
 Trader backend; it never holds broker credentials or calls a broker directly.
 
 The app is linked to the production backend at
-**`https://rider.awesometech.com.ng`** (WebSocket `wss://rider.awesometech.com.ng`)
+**`https://traderbackend.awesometech.com.ng`** (WebSocket `wss://traderbackend.awesometech.com.ng`)
 via the defaults in `lib/core/config/app_config.dart`.
 
 ## Requirements
@@ -18,7 +18,7 @@ The backend URL is injected at build time. Two define files are provided:
 
 | File | Target |
 |------|--------|
-| `dart_defines/prod.json` | `https://rider.awesometech.com.ng` (Lenovo server) |
+| `dart_defines/prod.json` | `https://traderbackend.awesometech.com.ng` (Lenovo server) |
 | `dart_defines/dev.json`  | `http://10.0.2.2:8000` (local Android emulator) |
 
 ```bash

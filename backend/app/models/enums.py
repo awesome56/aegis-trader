@@ -141,3 +141,14 @@ class NotificationSeverity(StrEnum):
 class BrokerMode(StrEnum):
     PAPER = "PAPER"
     LIVE = "LIVE"
+
+
+class TimeInForce(StrEnum):
+    """Supported order time-in-force values.
+
+    Only values with real semantics in the paper broker are modelled; anything
+    else is rejected rather than silently accepted.
+    """
+
+    DAY = "DAY"
+    GTC = "GTC"

@@ -6,11 +6,11 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import MONEY, Base, JSONType, TimestampMixin, UUIDMixin
-from app.models.enums import OrderStatus, OrderType, PositionSide, TradeSide
+from app.models.enums import OrderStatus, OrderType, TimeInForce, TradeSide
 
 
 class Order(UUIDMixin, TimestampMixin, Base):
@@ -25,13 +25,17 @@ class Order(UUIDMixin, TimestampMixin, Base):
     broker_account_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("broker_accounts.id", ondelete="SET NULL"), index=True
     )
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("assets.id", ondelete="SET NULL"), index=True
+    )
 
     symbol: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
-    side: Mapped[PositionSide] = mapped_column(
-        Enum(PositionSide, native_enum=False), nullable=False
-    )
+    side: Mapped[TradeSide] = mapped_column(Enum(TradeSide, native_enum=False), nullable=False)
     order_type: Mapped[OrderType] = mapped_column(
         Enum(OrderType, native_enum=False), nullable=False
+    )
+    time_in_force: Mapped[TimeInForce] = mapped_column(
+        Enum(TimeInForce, native_enum=False), default=TimeInForce.DAY, nullable=False
     )
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus, native_enum=False),
@@ -47,10 +51,9 @@ class Order(UUIDMixin, TimestampMixin, Base):
     average_fill_price: Mapped[Decimal | None] = mapped_column(MONEY)
     fees: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
 
-    # Idempotency: unique client key prevents duplicate submissions.
-    idempotency_key: Mapped[str] = mapped_column(
-        String(128), unique=True, index=True, nullable=False
-    )
+    # Idempotency: unique per broker account prevents duplicate submissions
+    # without leaking keys across accounts.
+    idempotency_key: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     client_order_id: Mapped[str | None] = mapped_column(String(128), index=True)
     broker_order_id: Mapped[str | None] = mapped_column(String(128), index=True)
 
@@ -72,7 +75,12 @@ class Order(UUIDMixin, TimestampMixin, Base):
         back_populates="order", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (Index("ix_orders_portfolio_status", "portfolio_id", "status"),)
+    __table_args__ = (
+        Index("ix_orders_portfolio_status", "portfolio_id", "status"),
+        UniqueConstraint(
+            "broker_account_id", "idempotency_key", name="uq_orders_account_idempotency"
+        ),
+    )
 
 
 class Execution(UUIDMixin, TimestampMixin, Base):
@@ -83,6 +91,8 @@ class Execution(UUIDMixin, TimestampMixin, Base):
     )
     quantity: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     price: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    gross_amount: Mapped[Decimal | None] = mapped_column(MONEY)
+    net_amount: Mapped[Decimal | None] = mapped_column(MONEY)
     fees: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
     commission: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
     slippage: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)

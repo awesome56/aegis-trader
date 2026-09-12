@@ -8,6 +8,8 @@ is newer than the latest stored snapshot for that symbol.
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from sqlalchemy import select
 
 from app.market.domain.models import MarketQuote
@@ -34,8 +36,12 @@ class MarketQuoteRepository(BaseRepository[MarketQuoteModel]):
         Returns the inserted row, or ``None`` when the snapshot is not newer.
         """
         existing = await self.latest_for_symbol(quote.symbol)
-        if existing is not None and existing.quote_time >= quote.market_timestamp:
-            return None
+        if existing is not None and existing.quote_time is not None:
+            existing_time = existing.quote_time
+            if existing_time.tzinfo is None:  # SQLite returns naive datetimes
+                existing_time = existing_time.replace(tzinfo=UTC)
+            if existing_time >= quote.market_timestamp:
+                return None
 
         model = MarketQuoteModel(
             symbol=quote.symbol,

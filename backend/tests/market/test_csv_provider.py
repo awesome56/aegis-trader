@@ -40,9 +40,7 @@ async def test_quote_derived_from_latest_candle() -> None:
 
 async def test_limit_returns_most_recent() -> None:
     provider = _provider(CSV_DIR)
-    candles = await provider.get_candles(
-        "AAPL", Timeframe.ONE_HOUR, WIDE_START, WIDE_END, limit=3
-    )
+    candles = await provider.get_candles("AAPL", Timeframe.ONE_HOUR, WIDE_START, WIDE_END, limit=3)
     assert len(candles) == 3
     assert candles[-1].close == Decimal("103.2000")
 

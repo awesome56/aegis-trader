@@ -83,9 +83,7 @@ async def test_unsupported_timeframe(authenticated_client: AsyncClient) -> None:
 
 
 async def test_limit_validation(authenticated_client: AsyncClient) -> None:
-    too_small = await authenticated_client.get(
-        "/api/v1/markets/AAPL/candles", params={"limit": 0}
-    )
+    too_small = await authenticated_client.get("/api/v1/markets/AAPL/candles", params={"limit": 0})
     assert too_small.status_code == 422
     assert too_small.json()["error"]["code"] == "validation_error"
 

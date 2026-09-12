@@ -11,9 +11,11 @@ from datetime import UTC, datetime
 from fastapi import APIRouter
 
 from app import __version__
+from app.brokers.types import BrokerStatus
 from app.core.config import get_settings
 from app.market.providers.factory import get_market_data_provider
 from app.models.enums import TradingState
+from app.realtime.publisher import get_connection_manager
 from app.schemas.system import LiveTradingGuard, SystemStatus
 
 router = APIRouter(prefix="/system", tags=["system"])
@@ -40,8 +42,14 @@ async def status() -> SystemStatus:
         live_trading_enabled=settings.LIVE_TRADING_ENABLED,
         live_trading_guard=LiveTradingGuard(allowed=allowed, missing_requirements=missing),
         broker_provider=settings.BROKER_PROVIDER,
+        broker_status=(
+            BrokerStatus.PAPER.value
+            if settings.BROKER_PROVIDER.strip().lower() == "paper"
+            else BrokerStatus.DISCONNECTED.value
+        ),
         market_data_provider=settings.MARKET_DATA_PROVIDER,
         market_data_status=await _market_data_status(),
+        realtime_connections=get_connection_manager().connection_count,
         agent_enabled=settings.AGENT_ENABLED,
         kill_switch_state=TradingState(settings.KILL_SWITCH_STATE),
         server_time=datetime.now(UTC),

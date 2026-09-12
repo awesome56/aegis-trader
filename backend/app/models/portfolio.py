@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import MONEY, Base, JSONType, TimestampMixin, UUIDMixin
@@ -62,16 +62,21 @@ class PortfolioSnapshot(UUIDMixin, TimestampMixin, Base):
     equity: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     buying_power: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     invested: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    market_value: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
     unrealized_pnl: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     realized_pnl: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     daily_pnl: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     total_return_pct: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     daily_return_pct: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     exposure_pct: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    position_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     positions: Mapped[list | None] = mapped_column(JSONType)
 
     portfolio: Mapped[Portfolio] = relationship(back_populates="snapshots")
 
     __table_args__ = (
         Index("ix_portfolio_snapshots_portfolio_time", "portfolio_id", "snapshot_time"),
+        UniqueConstraint(
+            "portfolio_id", "snapshot_time", name="uq_portfolio_snapshots_portfolio_time"
+        ),
     )

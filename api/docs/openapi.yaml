@@ -413,6 +413,510 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/dashboard:
+    get:
+      tags:
+      - dashboard
+      summary: Aggregated dashboard data
+      operationId: get_dashboard_api_v1_dashboard_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/portfolio:
+    get:
+      tags:
+      - portfolio
+      summary: Portfolio summary
+      operationId: get_portfolio_api_v1_portfolio_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummary'
+      security:
+      - HTTPBearer: []
+  /api/v1/portfolio/history:
+    get:
+      tags:
+      - portfolio
+      summary: Portfolio equity history
+      operationId: get_history_api_v1_portfolio_history_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: range
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 1D|1W|1M|3M|6M|YTD|1Y|ALL
+          default: 1M
+          title: Range
+        description: 1D|1W|1M|3M|6M|YTD|1Y|ALL
+      - name: start
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: Custom start (ISO 8601)
+          title: Start
+        description: Custom start (ISO 8601)
+      - name: end
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: Custom end (ISO 8601)
+          title: End
+        description: Custom end (ISO 8601)
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioHistory'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portfolio/allocation:
+    get:
+      tags:
+      - portfolio
+      summary: Portfolio allocation
+      operationId: get_allocation_api_v1_portfolio_allocation_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationBreakdown'
+      security:
+      - HTTPBearer: []
+  /api/v1/positions:
+    get:
+      tags:
+      - positions
+      summary: List open positions
+      operationId: list_positions_api_v1_positions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PositionValuation'
+                type: array
+                title: Response List Positions Api V1 Positions Get
+      security:
+      - HTTPBearer: []
+  /api/v1/positions/{position_id}:
+    get:
+      tags:
+      - positions
+      summary: Position detail
+      operationId: get_position_api_v1_positions__position_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: position_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Position Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionValuation'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broker/account:
+    get:
+      tags:
+      - broker
+      summary: Paper broker account state
+      operationId: get_account_api_v1_broker_account_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerAccountSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/broker/positions:
+    get:
+      tags:
+      - broker
+      summary: Broker positions
+      operationId: get_positions_api_v1_broker_positions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BrokerPositionSchema'
+                type: array
+                title: Response Get Positions Api V1 Broker Positions Get
+      security:
+      - HTTPBearer: []
+  /api/v1/broker/positions/{symbol}:
+    get:
+      tags:
+      - broker
+      summary: Broker position by symbol
+      operationId: get_position_api_v1_broker_positions__symbol__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Symbol
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerPositionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broker/quote/{symbol}:
+    get:
+      tags:
+      - broker
+      summary: Quote via the broker
+      operationId: get_quote_api_v1_broker_quote__symbol__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Symbol
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerQuoteSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broker/clock:
+    get:
+      tags:
+      - broker
+      summary: Market clock
+      operationId: get_clock_api_v1_broker_clock_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketClockSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/broker/orders:
+    get:
+      tags:
+      - broker
+      summary: List broker orders
+      operationId: list_orders_api_v1_broker_orders_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by order status
+          title: Status
+        description: Filter by order status
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerOrderListSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - broker
+      summary: Submit a manual paper order
+      operationId: submit_order_api_v1_broker_orders_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerOrderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broker/orders/{order_id}:
+    get:
+      tags:
+      - broker
+      summary: Broker order by id
+      operationId: get_order_api_v1_broker_orders__order_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerOrderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - broker
+      summary: Cancel a manual paper order
+      operationId: cancel_order_api_v1_broker_orders__order_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerOrderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broker/orders/process:
+    post:
+      tags:
+      - broker
+      summary: Re-evaluate open paper orders (testing/worker hook)
+      operationId: process_open_orders_api_v1_broker_orders_process_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BrokerOrderSchema'
+                type: array
+                title: Response Process Open Orders Api V1 Broker Orders Process Post
+      security:
+      - HTTPBearer: []
+  /api/v1/notifications:
+    get:
+      tags:
+      - notifications
+      summary: List notifications
+      operationId: list_notifications_api_v1_notifications_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unread_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Unread Only
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - notifications
+      summary: Unread notification count
+      operationId: unread_count_api_v1_notifications_unread_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCountSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/notifications/{notification_id}/read:
+    post:
+      tags:
+      - notifications
+      summary: Mark read
+      operationId: mark_read_api_v1_notifications__notification_id__read_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: notification_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Notification Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/notifications/read-all:
+    post:
+      tags:
+      - notifications
+      summary: Mark all read
+      operationId: mark_all_read_api_v1_notifications_read_all_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCountSchema'
+      security:
+      - HTTPBearer: []
   /:
     get:
       tags:
@@ -431,6 +935,58 @@ paths:
                 title: Response Root  Get
 components:
   schemas:
+    AllocationBreakdown:
+      properties:
+        total_equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Equity
+        cash_weight_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash Weight Percent
+        by_symbol:
+          items:
+            $ref: '#/components/schemas/AllocationSlice'
+          type: array
+          title: By Symbol
+        by_asset_class:
+          items:
+            $ref: '#/components/schemas/AllocationSlice'
+          type: array
+          title: By Asset Class
+        by_sector:
+          items:
+            $ref: '#/components/schemas/AllocationSlice'
+          type: array
+          title: By Sector
+      type: object
+      required:
+      - total_equity
+      - cash_weight_percent
+      - by_symbol
+      - by_asset_class
+      - by_sector
+      title: AllocationBreakdown
+    AllocationSlice:
+      properties:
+        label:
+          type: string
+          title: Label
+        value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Value
+        weight_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Weight Percent
+      type: object
+      required:
+      - label
+      - value
+      - weight_percent
+      title: AllocationSlice
     AssetSearchSchema:
       properties:
         symbol:
@@ -548,6 +1104,339 @@ components:
       - bandwidth
       - percent_b
       title: BollingerSchema
+    BrokerAccountSchema:
+      properties:
+        broker_account_id:
+          type: string
+          format: uuid
+          title: Broker Account Id
+        external_account_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Account Id
+        provider:
+          type: string
+          title: Provider
+        currency:
+          type: string
+          title: Currency
+        status:
+          type: string
+          title: Status
+        cash:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash
+        buying_power:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Buying Power
+        equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Equity
+        market_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Market Value
+        realized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Realized Pnl
+        unrealized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      type: object
+      required:
+      - broker_account_id
+      - external_account_id
+      - provider
+      - currency
+      - status
+      - cash
+      - buying_power
+      - equity
+      - market_value
+      - realized_pnl
+      - unrealized_pnl
+      - created_at
+      - updated_at
+      title: BrokerAccountSchema
+    BrokerOrderListSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/BrokerOrderSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - items
+      - total
+      title: BrokerOrderListSchema
+    BrokerOrderSchema:
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          title: Order Id
+        broker_order_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Broker Order Id
+        client_order_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Client Order Id
+        symbol:
+          type: string
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        order_type:
+          $ref: '#/components/schemas/OrderType'
+        time_in_force:
+          $ref: '#/components/schemas/TimeInForce'
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        filled_quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Filled Quantity
+        remaining_quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Remaining Quantity
+        limit_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Limit Price
+        stop_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Price
+        average_fill_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Average Fill Price
+        commission:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Commission
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        error_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Message
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        filled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Filled At
+        cancelled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Cancelled At
+      type: object
+      required:
+      - order_id
+      - broker_order_id
+      - client_order_id
+      - symbol
+      - side
+      - order_type
+      - time_in_force
+      - quantity
+      - filled_quantity
+      - remaining_quantity
+      - limit_price
+      - stop_price
+      - average_fill_price
+      - commission
+      - status
+      - error_message
+      - created_at
+      - updated_at
+      - submitted_at
+      - filled_at
+      - cancelled_at
+      title: BrokerOrderSchema
+    BrokerPositionSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        asset_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Asset Id
+        side:
+          type: string
+          title: Side
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        average_entry_price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Average Entry Price
+        current_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Current Price
+        market_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Market Value
+        cost_basis:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cost Basis
+        unrealized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl
+        unrealized_pnl_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl Percent
+        realized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Realized Pnl
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      type: object
+      required:
+      - symbol
+      - asset_id
+      - side
+      - quantity
+      - average_entry_price
+      - current_price
+      - market_value
+      - cost_basis
+      - unrealized_pnl
+      - unrealized_pnl_percent
+      - realized_pnl
+      - updated_at
+      title: BrokerPositionSchema
+    BrokerQuoteSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        bid:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Bid
+        ask:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Ask
+        last:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Last
+        mid:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Mid
+        provider:
+          type: string
+          title: Provider
+        market_timestamp:
+          type: string
+          format: date-time
+          title: Market Timestamp
+        received_at:
+          type: string
+          format: date-time
+          title: Received At
+        age_seconds:
+          type: number
+          title: Age Seconds
+        is_stale:
+          type: boolean
+          title: Is Stale
+      type: object
+      required:
+      - symbol
+      - bid
+      - ask
+      - last
+      - mid
+      - provider
+      - market_timestamp
+      - received_at
+      - age_seconds
+      - is_stale
+      title: BrokerQuoteSchema
     CandleSchema:
       properties:
         open_time:
@@ -665,6 +1554,90 @@ components:
       - name
       - status
       title: ComponentHealth
+    DashboardAvailability:
+      properties:
+        agent:
+          type: boolean
+          title: Agent
+          default: false
+        risk:
+          type: boolean
+          title: Risk
+          default: false
+        strategies:
+          type: boolean
+          title: Strategies
+          default: false
+        backtesting:
+          type: boolean
+          title: Backtesting
+          default: false
+      type: object
+      title: DashboardAvailability
+    DashboardSchema:
+      properties:
+        portfolio:
+          $ref: '#/components/schemas/PortfolioSummary'
+        trading_mode:
+          type: string
+          title: Trading Mode
+        broker_provider:
+          type: string
+          title: Broker Provider
+        broker_status:
+          type: string
+          title: Broker Status
+        market_data_provider:
+          type: string
+          title: Market Data Provider
+        market_data_status:
+          type: string
+          title: Market Data Status
+        market_is_open:
+          type: boolean
+          title: Market Is Open
+        market_session:
+          type: string
+          title: Market Session
+        realtime_connections:
+          type: integer
+          title: Realtime Connections
+        unread_notifications:
+          type: integer
+          title: Unread Notifications
+        drawdown_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Drawdown Percent
+        recent_orders:
+          items:
+            $ref: '#/components/schemas/BrokerOrderSchema'
+          type: array
+          title: Recent Orders
+        recent_notifications:
+          items:
+            $ref: '#/components/schemas/NotificationSchema'
+          type: array
+          title: Recent Notifications
+        availability:
+          $ref: '#/components/schemas/DashboardAvailability'
+      type: object
+      required:
+      - portfolio
+      - trading_mode
+      - broker_provider
+      - broker_status
+      - market_data_provider
+      - market_data_status
+      - market_is_open
+      - market_session
+      - realtime_connections
+      - unread_notifications
+      - drawdown_percent
+      - recent_orders
+      - recent_notifications
+      - availability
+      title: DashboardSchema
     HTTPValidationError:
       properties:
         detail:
@@ -893,6 +1866,42 @@ components:
       - signal
       - histogram
       title: MACDSchema
+    MarketClockSchema:
+      properties:
+        is_open:
+          type: boolean
+          title: Is Open
+        session:
+          type: string
+          title: Session
+        current_time:
+          type: string
+          format: date-time
+          title: Current Time
+        next_open:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Next Open
+        next_close:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Next Close
+        provider:
+          type: string
+          title: Provider
+      type: object
+      required:
+      - is_open
+      - session
+      - current_time
+      - next_open
+      - next_close
+      - provider
+      title: MarketClockSchema
     MarketSession:
       type: string
       enum:
@@ -949,6 +1958,383 @@ components:
       required:
       - detail
       title: Message
+    NotificationPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NotificationSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: NotificationPageSchema
+    NotificationSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        category:
+          type: string
+          title: Category
+        severity:
+          type: string
+          title: Severity
+        title:
+          type: string
+          title: Title
+        message:
+          type: string
+          title: Message
+        is_read:
+          type: boolean
+          title: Is Read
+        read_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Read At
+        payload:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Payload
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - category
+      - severity
+      - title
+      - message
+      - is_read
+      - read_at
+      - payload
+      - created_at
+      title: NotificationSchema
+    OrderCreateRequest:
+      properties:
+        symbol:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Symbol
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        order_type:
+          $ref: '#/components/schemas/OrderType'
+          default: MARKET
+        quantity:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        limit_price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Limit Price
+        stop_price:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Stop Price
+        time_in_force:
+          $ref: '#/components/schemas/TimeInForce'
+          default: DAY
+        client_order_id:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Client Order Id
+        idempotency_key:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Idempotency Key
+      type: object
+      required:
+      - symbol
+      - side
+      - quantity
+      title: OrderCreateRequest
+      description: Manual paper-order submission payload (paper mode only).
+    OrderStatus:
+      type: string
+      enum:
+      - CREATED
+      - VALIDATED
+      - SUBMITTED
+      - ACCEPTED
+      - PARTIALLY_FILLED
+      - FILLED
+      - CANCELLED
+      - REJECTED
+      - FAILED
+      title: OrderStatus
+    OrderType:
+      type: string
+      enum:
+      - MARKET
+      - LIMIT
+      - STOP
+      - STOP_LIMIT
+      title: OrderType
+    PortfolioHistory:
+      properties:
+        range:
+          type: string
+          title: Range
+        start:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Start
+        end:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: End
+        point_count:
+          type: integer
+          title: Point Count
+        downsampled:
+          type: boolean
+          title: Downsampled
+        drawdown_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Drawdown Percent
+        points:
+          items:
+            $ref: '#/components/schemas/SnapshotPoint'
+          type: array
+          title: Points
+      type: object
+      required:
+      - range
+      - point_count
+      - downsampled
+      - drawdown_percent
+      - points
+      title: PortfolioHistory
+    PortfolioSummary:
+      properties:
+        portfolio_id:
+          type: string
+          format: uuid
+          title: Portfolio Id
+        currency:
+          type: string
+          title: Currency
+        equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Equity
+        cash:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash
+        buying_power:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Buying Power
+        invested_amount:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Invested Amount
+        market_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Market Value
+        realized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Realized Pnl
+        unrealized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl
+        total_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Pnl
+        daily_pnl:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Daily Pnl
+        daily_return_percent:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Daily Return Percent
+        total_return_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Return Percent
+        exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Exposure Percent
+        position_count:
+          type: integer
+          title: Position Count
+        initial_capital:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Initial Capital
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      type: object
+      required:
+      - portfolio_id
+      - currency
+      - equity
+      - cash
+      - buying_power
+      - invested_amount
+      - market_value
+      - realized_pnl
+      - unrealized_pnl
+      - total_pnl
+      - total_return_percent
+      - exposure_percent
+      - position_count
+      - initial_capital
+      title: PortfolioSummary
+    PositionValuation:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        symbol:
+          type: string
+          title: Symbol
+        asset_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Asset Name
+        asset_class:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Asset Class
+        sector:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sector
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        average_entry_price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Average Entry Price
+        current_price:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Current Price
+        market_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Market Value
+        cost_basis:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cost Basis
+        weight_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Weight Percent
+        unrealized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl
+        unrealized_return_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Return Percent
+        realized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Realized Pnl
+        opened_at:
+          type: string
+          format: date-time
+          title: Opened At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+        price_timestamp:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Price Timestamp
+        price_stale:
+          type: boolean
+          title: Price Stale
+          default: false
+      type: object
+      required:
+      - id
+      - symbol
+      - quantity
+      - average_entry_price
+      - market_value
+      - cost_basis
+      - weight_percent
+      - unrealized_pnl
+      - unrealized_return_percent
+      - realized_pnl
+      - opened_at
+      title: PositionValuation
     QuoteSchema:
       properties:
         symbol:
@@ -1128,6 +2514,60 @@ components:
       - last_used_at
       - expires_at
       title: SessionRead
+    SnapshotPoint:
+      properties:
+        snapshot_time:
+          type: string
+          format: date-time
+          title: Snapshot Time
+        equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Equity
+        cash:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash
+        market_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Market Value
+        realized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Realized Pnl
+        unrealized_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Unrealized Pnl
+        total_return_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Return Percent
+        daily_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Daily Pnl
+        exposure_percent:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Exposure Percent
+        position_count:
+          type: integer
+          title: Position Count
+      type: object
+      required:
+      - snapshot_time
+      - equity
+      - cash
+      - market_value
+      - realized_pnl
+      - unrealized_pnl
+      - total_return_percent
+      - daily_pnl
+      - exposure_percent
+      - position_count
+      title: SnapshotPoint
     SystemStatus:
       properties:
         app_name:
@@ -1150,12 +2590,18 @@ components:
         broker_provider:
           type: string
           title: Broker Provider
+        broker_status:
+          type: string
+          title: Broker Status
         market_data_provider:
           type: string
           title: Market Data Provider
         market_data_status:
           type: string
           title: Market Data Status
+        realtime_connections:
+          type: integer
+          title: Realtime Connections
         agent_enabled:
           type: boolean
           title: Agent Enabled
@@ -1174,12 +2620,26 @@ components:
       - live_trading_enabled
       - live_trading_guard
       - broker_provider
+      - broker_status
       - market_data_provider
       - market_data_status
+      - realtime_connections
       - agent_enabled
       - kill_switch_state
       - server_time
       title: SystemStatus
+    TimeInForce:
+      type: string
+      enum:
+      - DAY
+      - GTC
+      title: TimeInForce
+      description: 'Supported order time-in-force values.
+
+
+        Only values with real semantics in the paper broker are modelled; anything
+
+        else is rejected rather than silently accepted.'
     TokenPair:
       properties:
         access_token:
@@ -1201,6 +2661,12 @@ components:
       - refresh_token
       - expires_in
       title: TokenPair
+    TradeSide:
+      type: string
+      enum:
+      - BUY
+      - SELL
+      title: TradeSide
     TradingState:
       type: string
       enum:
@@ -1209,6 +2675,15 @@ components:
       - TRADING_DISABLED
       - EMERGENCY_STOP
       title: TradingState
+    UnreadCountSchema:
+      properties:
+        unread:
+          type: integer
+          title: Unread
+      type: object
+      required:
+      - unread
+      title: UnreadCountSchema
     UserRead:
       properties:
         id:

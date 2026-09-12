@@ -230,9 +230,9 @@ tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 |-------|-------|--------|
 | 1 | Foundation: FastAPI, config, Postgres/Redis, models, Alembic, health, auth, Docker, Flutter skeleton | ✅ Done |
 | 2 | Market data provider, candles, quotes, indicators | ✅ Done |
-| 3 | Paper broker (fills, slippage, fees, P&L) | ⏭ Next |
-| 4 | Portfolio service, snapshots, REST + WebSocket, Flutter wiring | |
-| 5 | Trend / momentum / mean-reversion strategies | |
+| 3 | Paper broker (fills, slippage, fees, P&L) | ✅ Done |
+| 4 | Portfolio service, snapshots, REST + WebSocket, notifications | ✅ Done |
+| 5 | Trend / momentum / mean-reversion strategies | ⏭ Next |
 | 6 | Deterministic Risk Engine + kill switch | |
 | 7 | TradeProposal → Risk → OrderManager pipeline | |
 | 8 | Backtesting engine + Flutter UI | |
@@ -240,13 +240,12 @@ tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 | 10 | Flutter completion, offline cache, notifications | |
 | 11 | Extended multi-agent intelligence | |
 
-### Phase 3 — next task
+### Phase 5 — next task
 
-Implement the `PaperBrokerAdapter` (Phase 3): simulated balances, orders, fills
-(partial fills), commissions, slippage, positions, realized/unrealized P&L,
-behind the `BrokerAdapter` interface so real brokers can be added later without
-changing the domain layer. Market data is provided by Phase 2 via
-`MarketDataService.get_fresh_quote()` / `get_fresh_candles()`.
+Implement the deterministic strategy engine: a `Strategy` interface plus Trend
+Following, Momentum and Mean Reversion strategies returning typed
+`StrategySignal`s from market data (SMA/EMA/RSI/MACD/ATR/Bollinger/volume),
+independently testable, with no order execution and no LLM involvement.
 
 ---
 

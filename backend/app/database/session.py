@@ -53,7 +53,11 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency yielding a unit-of-work session."""
+    """FastAPI dependency yielding a unit-of-work session.
+
+    Domain events queued on ``session.info['pending_events']`` are published
+    only after a successful commit, so a rolled-back fill is never broadcast.
+    """
     factory = get_session_factory()
     async with factory() as session:
         try:
@@ -62,6 +66,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+        from app.realtime.publisher import publish_pending
+
+        await publish_pending(session.info)
 
 
 async def check_database() -> bool:

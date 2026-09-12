@@ -195,6 +195,10 @@ class MarketDataService:
             return None
         return await self._assets.get_by_symbol(symbol)
 
+    async def resolve_asset(self, symbol: str) -> Asset | None:
+        """Return the persisted Asset for a symbol, creating it if necessary."""
+        return await self._ensure_asset(normalize_symbol(symbol))
+
     async def health(self) -> ProviderHealth:
         return await self._provider.health_check()
 

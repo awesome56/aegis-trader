@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.database.redis import close_redis
 from app.database.session import dispose_engine
+from app.websocket.routes import router as websocket_router
 
 logger = get_logger(__name__)
 
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(websocket_router)
 
     @app.get("/api/docs/openapi.yaml", include_in_schema=False)
     async def openapi_yaml() -> PlainTextResponse:

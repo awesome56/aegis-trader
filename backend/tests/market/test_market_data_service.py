@@ -66,7 +66,10 @@ def _service(db_session, provider, cache, freshness, settings) -> MarketDataServ
 
 
 async def test_quote_persists_and_is_cached(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -80,15 +83,16 @@ async def test_quote_persists_and_is_cached(
     assert second.last == first.last
 
     count = await db_session.scalar(
-        select(func.count())
-        .select_from(MarketQuoteModel)
-        .where(MarketQuoteModel.symbol == "AAPL")
+        select(func.count()).select_from(MarketQuoteModel).where(MarketQuoteModel.symbol == "AAPL")
     )
     assert count == 1
 
 
 async def test_quote_creates_normalised_asset(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -106,7 +110,10 @@ async def test_quote_creates_normalised_asset(
 
 
 async def test_latest_price(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -114,7 +121,10 @@ async def test_latest_price(
 
 
 async def test_candles_provider_then_database_and_dedupe(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -136,7 +146,10 @@ async def test_candles_provider_then_database_and_dedupe(
 
 
 async def test_latest_candles_are_provider_first_and_cached(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -150,7 +163,10 @@ async def test_latest_candles_are_provider_first_and_cached(
 
 
 async def test_latest_candles_fallback_to_database(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     seed_provider = MockMarketDataProvider(market_settings, clock=lambda: FIXED_NOW)
     await _service(db_session, seed_provider, memory_cache, freshness, market_settings).get_candles(
@@ -164,7 +180,10 @@ async def test_latest_candles_fallback_to_database(
 
 
 async def test_fresh_quote_succeeds_when_recent(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -173,7 +192,10 @@ async def test_fresh_quote_succeeds_when_recent(
 
 
 async def test_stale_quote_is_rejected(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = StaleQuoteProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -182,7 +204,9 @@ async def test_stale_quote_is_rejected(
 
 
 async def test_stale_candles_are_rejected(
-    db_session, memory_cache, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    market_settings,  # noqa: ANN001
 ) -> None:
     from app.market.services.freshness import MarketDataFreshnessService
 
@@ -195,7 +219,10 @@ async def test_stale_candles_are_rejected(
 
 
 async def test_unknown_symbol_raises(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -204,7 +231,10 @@ async def test_unknown_symbol_raises(
 
 
 async def test_invalid_timeframe_and_limits(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)
@@ -218,7 +248,10 @@ async def test_invalid_timeframe_and_limits(
 
 
 async def test_status_search_and_health(
-    db_session, memory_cache, freshness, market_settings  # noqa: ANN001
+    db_session,
+    memory_cache,
+    freshness,
+    market_settings,  # noqa: ANN001
 ) -> None:
     provider = CountingProvider(market_settings, clock=lambda: FIXED_NOW)
     service = _service(db_session, provider, memory_cache, freshness, market_settings)

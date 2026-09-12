@@ -28,6 +28,7 @@ class Position(UUIDMixin, TimestampMixin, Base):
     )
     quantity: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     average_entry_price: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    cost_basis: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
     current_price: Mapped[Decimal | None] = mapped_column(MONEY)
     market_value: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)
     unrealized_pnl: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0"), nullable=False)

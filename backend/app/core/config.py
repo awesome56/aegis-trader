@@ -68,7 +68,17 @@ class Settings(BaseSettings):
     BROKER_PAPER_COMMISSION: float = 0.00
     BROKER_PAPER_SLIPPAGE_BPS: float = 2.0
     BROKER_PAPER_SPREAD_BPS: float = 1.0
-    BROKER_PAPER_PARTIAL_FILLS: bool = True
+    BROKER_PAPER_PARTIAL_FILLS: bool = False
+    BROKER_PAPER_PARTIAL_FILL_RATIO: float = 0.5
+    BROKER_PAPER_AUTO_CREATE_ACCOUNT: bool = True
+    BROKER_PAPER_DEFAULT_CURRENCY: str = "USD"
+
+    # --- Portfolio -----------------------------------------------------------
+    PORTFOLIO_SNAPSHOT_INTERVAL_SECONDS: int = 300
+    PORTFOLIO_HISTORY_MAX_POINTS: int = 1000
+
+    # --- Realtime ------------------------------------------------------------
+    WEBSOCKET_HEARTBEAT_SECONDS: int = 30
 
     # --- Market data ---------------------------------------------------------
     MARKET_DATA_PROVIDER: str = "mock"

@@ -29,6 +29,8 @@ class BrokerAccount(UUIDMixin, TimestampMixin, Base):
     credentials_ref: Mapped[str | None] = mapped_column(String(255))
     cash_balance: Mapped[object] = mapped_column(MONEY, default=0, nullable=False)
     buying_power: Mapped[object] = mapped_column(MONEY, default=0, nullable=False)
+    realized_pnl: Mapped[object] = mapped_column(MONEY, default=0, nullable=False)
+    currency: Mapped[str] = mapped_column(String(8), default="USD", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
     user: Mapped[User] = relationship(back_populates="broker_accounts")  # noqa: F821

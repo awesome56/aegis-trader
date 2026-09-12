@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from sqlalchemy import func, select
 
 from app.market.domain.models import AssetSearchResult
@@ -29,6 +31,13 @@ class AssetRepository(BaseRepository[Asset]):
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_by_ids(self, ids: list[uuid.UUID]) -> dict[uuid.UUID, Asset]:
+        if not ids:
+            return {}
+        stmt = select(Asset).where(Asset.id.in_(ids))
+        result = await self.session.execute(stmt)
+        return {asset.id: asset for asset in result.scalars().all()}
 
     async def get_or_create_from_result(self, result: AssetSearchResult) -> Asset:
         """Create or return the asset for a provider search result.

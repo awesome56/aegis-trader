@@ -107,13 +107,40 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T backend \
 
 | Item | Value |
 |------|-------|
+| Browser terminal | https://trader.awesometech.com.ng |
 | Public API | https://traderbackend.awesometech.com.ng |
 | OpenAPI YAML | https://traderbackend.awesometech.com.ng/api/docs/openapi.yaml |
 | ReDoc | https://traderbackend.awesometech.com.ng/api/docs |
 | Health | https://traderbackend.awesometech.com.ng/api/v1/health |
 | Backend bind | `127.0.0.1:8899` (Docker → container :8000) |
+| Web bind | `127.0.0.1:9077` (Docker → container :3000) |
 | Tunnel | shared `examco-tunnel` (`cloudflared.service`) |
 | Trading mode | paper (live interlock locked) |
+
+## 6. Browser terminal (`web/`)
+
+The Nuxt 4 SPA is built into the `aegis-web` container and published at
+**https://trader.awesometech.com.ng** via the same tunnel. It calls the API
+cross-origin at `traderbackend.awesometech.com.ng`; the backend `CORS_ORIGINS`
+includes both origins.
+
+```bash
+# redeploy after a push
+ssh lenovo 'cd ~/aegis-trader && git pull && docker compose --env-file .env.prod \
+  -f docker-compose.prod.yml up -d --build web'
+
+# logs
+ssh lenovo 'docker logs -f aegis-web'
+```
+
+Environment (in `.env.prod`):
+
+| Variable | Value |
+|----------|-------|
+| `WEB_HOST_PORT` | `9077` |
+| `NUXT_PUBLIC_API_BASE_URL` | `https://traderbackend.awesometech.com.ng` |
+| `NUXT_PUBLIC_WS_BASE_URL` | `wss://traderbackend.awesometech.com.ng` |
+| `NUXT_PUBLIC_USE_MOCK_API` | `false` (always, in the compose service) |
 
 ## Notes / cautions
 

@@ -198,6 +198,8 @@ flutter build apk --release --dart-define-from-file=dart_defines/prod.json
 
 ## Browser terminal (`web/`)
 
+Live at **https://trader.awesometech.com.ng**.
+
 A purpose-built professional trading terminal (not a generic admin dashboard).
 It is a secure presentation and control layer: it never talks to a broker or
 exchange and never makes trading, risk or strategy decisions.

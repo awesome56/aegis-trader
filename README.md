@@ -76,6 +76,7 @@ trading-platform/
 │   ├── scripts/        entrypoint + seed
 │   └── tests/
 ├── mobile/             Flutter client (Riverpod, GoRouter, Dio)
+├── web/                Browser terminal (Nuxt 4, Vue 3, TanStack Query)
 ├── docker-compose.yml  PostgreSQL + Redis + backend
 └── .gitignore
 ```
@@ -194,6 +195,32 @@ The mobile app defaults to this backend; build it with the production defines:
 cd mobile
 flutter build apk --release --dart-define-from-file=dart_defines/prod.json
 ```
+
+## Browser terminal (`web/`)
+
+A purpose-built professional trading terminal (not a generic admin dashboard).
+It is a secure presentation and control layer: it never talks to a broker or
+exchange and never makes trading, risk or strategy decisions.
+
+- **Stack**: Nuxt 4 · Vue 3 (`<script setup lang="ts">`) · strict TypeScript ·
+  Tailwind v4 (via Nuxt UI) · Pinia · TanStack Query · VueUse · Zod · ECharts ·
+  TradingView Lightweight Charts · Vitest · Playwright
+- **Server state** lives in TanStack Query; **client state** in Pinia.
+- One shared WebSocket feeds targeted query-cache invalidation and the
+  notification centre.
+- Dark-first, dense, numerically legible; a persistent **PAPER TRADING**
+  indicator is always visible.
+
+```bash
+cd web
+npm install
+cp .env.example .env
+npm run dev        # http://localhost:3000
+npm run typecheck && npm run lint && npm test && npm run build
+```
+
+Backend endpoints the web app expects but that are not implemented yet are
+tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 
 ## Development phases
 

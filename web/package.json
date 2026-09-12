@@ -1,0 +1,58 @@
+{
+  "name": "aegis-trader-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser frontend for the Aegis Trader AI-assisted trading platform.",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.131",
+    "@nuxt/ui": "^4.11.1",
+    "@pinia/nuxt": "^1.0.2",
+    "@tanstack/vue-query": "^5.102.8",
+    "@vee-validate/zod": "^4.15.1",
+    "@vueuse/core": "^14.4.0",
+    "@vueuse/nuxt": "^14.4.0",
+    "date-fns": "^4.4.0",
+    "echarts": "^6.1.0",
+    "lightweight-charts": "^5.2.1",
+    "nuxt": "^4.5.2",
+    "pinia": "^4.0.3",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.0",
+    "vue-echarts": "^8.3.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.2",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.5.0",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "happy-dom": "^20.14.5",
+    "playwright": "^1.63.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0",
+    "vue-tsc": "^3.3.11"
+  }
+}

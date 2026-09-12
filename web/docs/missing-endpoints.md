@@ -12,6 +12,11 @@ back to mocks.
 - `POST /api/v1/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`
 - `GET /api/v1/auth/me`, `/auth/sessions`, `/auth/registration-open`
 - `GET /api/v1/system/status`
+- `GET /api/v1/markets/status`
+- `GET /api/v1/markets/search?q=`
+- `GET /api/v1/markets/{symbol}/quote`
+- `GET /api/v1/markets/{symbol}/candles?timeframe=&start=&end=&limit=`
+- `GET /api/v1/markets/{symbol}/indicators?timeframe=&limit=`
 
 ## Required by Phase 2+ (not implemented)
 
@@ -24,10 +29,7 @@ back to mocks.
 | GET | `/api/v1/positions` | Positions |
 | GET | `/api/v1/positions/{id}` | Position workspace |
 | GET | `/api/v1/markets` | Watchlist / market overview |
-| GET | `/api/v1/markets/search` | Symbol search |
-| GET | `/api/v1/markets/{symbol}` | Asset detail |
-| GET | `/api/v1/markets/{symbol}/candles` | Candlestick charts |
-| GET | `/api/v1/markets/{symbol}/quote` | Quotes |
+| GET | `/api/v1/markets/{symbol}` | Asset detail (quote/candles/indicators exist; this aggregate does not) |
 | GET | `/api/v1/trades` | Trades |
 | GET | `/api/v1/trades/{id}` | Trade audit |
 | GET | `/api/v1/orders` | Orders |

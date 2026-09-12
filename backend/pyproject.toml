@@ -75,6 +75,9 @@ ignore = ["S101", "S105", "S106"]  # asserts expected; credential-like defaults 
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106"]
+# Deterministic pseudo-random generation is intentional for the mock provider
+# (reproducible fixtures), never used for security.
+"app/market/providers/mock.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.12"

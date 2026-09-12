@@ -72,8 +72,33 @@ class Settings(BaseSettings):
 
     # --- Market data ---------------------------------------------------------
     MARKET_DATA_PROVIDER: str = "mock"
+    # Legacy aliases (superseded by the explicit settings below; retained for
+    # backward compatibility with existing deployments).
     MARKET_DATA_STALE_SECONDS: int = 60
     MARKET_DATA_CACHE_TTL_SECONDS: int = 5
+
+    MARKET_CACHE_PREFIX: str = "market"
+    MARKET_QUOTE_CACHE_TTL_SECONDS: int = 5
+    MARKET_CANDLE_CACHE_TTL_SECONDS: int = 60
+    MARKET_STATUS_CACHE_TTL_SECONDS: int = 30
+    # Staleness thresholds are compared against the *market* timestamp, never the
+    # time the backend received the data.
+    MAX_QUOTE_AGE_SECONDS: int = 15
+    MAX_INTRADAY_CANDLE_AGE_SECONDS: int = 300
+    MAX_DAILY_CANDLE_AGE_SECONDS: int = 86400
+    MARKET_MAX_CANDLE_LIMIT: int = 1000
+    MARKET_DEFAULT_CURRENCY: str = "USD"
+
+    # --- Market data: deterministic mock provider ----------------------------
+    MOCK_MARKET_SEED: int = 42
+    MOCK_MARKET_SYMBOLS: str = "AAPL,MSFT,NVDA,TSLA,AMZN,SPY"
+    MOCK_MARKET_START_PRICE: float = 100.0
+    MOCK_MARKET_VOLATILITY: float = 0.02
+    MOCK_MARKET_IS_OPEN: bool = True
+
+    # --- Market data: CSV provider -------------------------------------------
+    CSV_MARKET_DATA_PATH: str = ""
+    CSV_MARKET_DATA_IS_OPEN: bool = True
 
     # --- LLM / Agent ---------------------------------------------------------
     LLM_PROVIDER: str = "openai"
@@ -121,6 +146,16 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @property
+    def market_symbols(self) -> list[str]:
+        """Configured mock/generic symbol universe, normalised and de-duplicated."""
+        seen: dict[str, None] = {}
+        for raw in self.MOCK_MARKET_SYMBOLS.split(","):
+            symbol = raw.strip().upper()
+            if symbol:
+                seen.setdefault(symbol, None)
+        return list(seen)
 
     @property
     def sync_database_url(self) -> str:

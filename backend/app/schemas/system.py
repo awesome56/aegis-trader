@@ -23,6 +23,7 @@ class SystemStatus(BaseModel):
     live_trading_guard: LiveTradingGuard
     broker_provider: str
     market_data_provider: str
+    market_data_status: str
     agent_enabled: bool
     kill_switch_state: TradingState
     server_time: datetime

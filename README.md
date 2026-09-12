@@ -229,8 +229,8 @@ tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 1 | Foundation: FastAPI, config, Postgres/Redis, models, Alembic, health, auth, Docker, Flutter skeleton | ✅ Done |
-| 2 | Market data provider, candles, quotes, indicators | ⏭ Next |
-| 3 | Paper broker (fills, slippage, fees, P&L) | |
+| 2 | Market data provider, candles, quotes, indicators | ✅ Done |
+| 3 | Paper broker (fills, slippage, fees, P&L) | ⏭ Next |
 | 4 | Portfolio service, snapshots, REST + WebSocket, Flutter wiring | |
 | 5 | Trend / momentum / mean-reversion strategies | |
 | 6 | Deterministic Risk Engine + kill switch | |
@@ -240,13 +240,13 @@ tracked in [`web/docs/missing-endpoints.md`](web/docs/missing-endpoints.md).
 | 10 | Flutter completion, offline cache, notifications | |
 | 11 | Extended multi-agent intelligence | |
 
-### Phase 2 — next task
+### Phase 3 — next task
 
-Implement the `MarketDataProvider` abstraction with a deterministic mock/CSV
-provider first, then a real provider; historical candles; quote caching with
-staleness checks; and the technical-indicator library (SMA, EMA, RSI, MACD,
-ATR, Bollinger Bands, volume) behind interfaces with unit tests. No strategy
-logic yet.
+Implement the `PaperBrokerAdapter` (Phase 3): simulated balances, orders, fills
+(partial fills), commissions, slippage, positions, realized/unrealized P&L,
+behind the `BrokerAdapter` interface so real brokers can be added later without
+changing the domain layer. Market data is provided by Phase 2 via
+`MarketDataService.get_fresh_quote()` / `get_fresh_candles()`.
 
 ---
 

@@ -212,6 +212,207 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SystemStatus'
+  /api/v1/markets/status:
+    get:
+      tags:
+      - markets
+      summary: Market session status
+      operationId: market_status_api_v1_markets_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketStatusSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/markets/search:
+    get:
+      tags:
+      - markets
+      summary: Search assets
+      operationId: search_assets_api_v1_markets_search_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Symbol or name fragment
+          title: Q
+        description: Symbol or name fragment
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 25
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetSearchSchema'
+                title: Response Search Assets Api V1 Markets Search Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/markets/{symbol}/quote:
+    get:
+      tags:
+      - markets
+      summary: Latest quote
+      operationId: get_quote_api_v1_markets__symbol__quote_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Symbol
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/markets/{symbol}/candles:
+    get:
+      tags:
+      - markets
+      summary: Historical candles
+      operationId: get_candles_api_v1_markets__symbol__candles_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Symbol
+      - name: timeframe
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Candle timeframe: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w'
+          default: 1h
+          title: Timeframe
+        description: 'Candle timeframe: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w'
+      - name: start
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: Inclusive start (ISO 8601)
+          title: Start
+        description: Inclusive start (ISO 8601)
+      - name: end
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          description: Inclusive end (ISO 8601)
+          title: End
+        description: Inclusive end (ISO 8601)
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 200
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandleSeriesSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/markets/{symbol}/indicators:
+    get:
+      tags:
+      - markets
+      summary: Technical indicators
+      operationId: get_indicators_api_v1_markets__symbol__indicators_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Symbol
+      - name: timeframe
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Candle timeframe: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w'
+          default: 1h
+          title: Timeframe
+        description: 'Candle timeframe: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 200
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndicatorResponseSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -230,6 +431,39 @@ paths:
                 title: Response Root  Get
 components:
   schemas:
+    AssetSearchSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        asset_class:
+          type: string
+          title: Asset Class
+        exchange:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exchange
+        currency:
+          type: string
+          title: Currency
+        provider:
+          type: string
+          title: Provider
+      type: object
+      required:
+      - symbol
+      - name
+      - asset_class
+      - exchange
+      - currency
+      - provider
+      title: AssetSearchSchema
     AuthResponse:
       properties:
         user:
@@ -241,6 +475,168 @@ components:
       - user
       - tokens
       title: AuthResponse
+    BollingerSchema:
+      properties:
+        period:
+          type: integer
+          title: Period
+        std_dev:
+          type: number
+          title: Std Dev
+        latest_middle:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Middle
+        latest_upper:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Upper
+        latest_lower:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Lower
+        latest_bandwidth:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Bandwidth
+        latest_percent_b:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Percent B
+        middle:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Middle
+        upper:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Upper
+        lower:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Lower
+        bandwidth:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Bandwidth
+        percent_b:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Percent B
+      type: object
+      required:
+      - period
+      - std_dev
+      - latest_middle
+      - latest_upper
+      - latest_lower
+      - latest_bandwidth
+      - latest_percent_b
+      - middle
+      - upper
+      - lower
+      - bandwidth
+      - percent_b
+      title: BollingerSchema
+    CandleSchema:
+      properties:
+        open_time:
+          type: string
+          format: date-time
+          title: Open Time
+        close_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Close Time
+        open:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Open
+        high:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: High
+        low:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Low
+        close:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Close
+        volume:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Volume
+        trade_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Trade Count
+        vwap:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Vwap
+      type: object
+      required:
+      - open_time
+      - close_time
+      - open
+      - high
+      - low
+      - close
+      - volume
+      - trade_count
+      - vwap
+      title: CandleSchema
+    CandleSeriesSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        timeframe:
+          type: string
+          title: Timeframe
+        provider:
+          type: string
+          title: Provider
+        candles:
+          items:
+            $ref: '#/components/schemas/CandleSchema'
+          type: array
+          title: Candles
+        is_stale:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Stale
+        age_seconds:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Age Seconds
+      type: object
+      required:
+      - symbol
+      - timeframe
+      - provider
+      - candles
+      title: CandleSeriesSchema
     ComponentHealth:
       properties:
         name:
@@ -250,6 +646,7 @@ components:
           type: string
           enum:
           - healthy
+          - degraded
           - unhealthy
           - not_configured
           title: Status
@@ -313,6 +710,90 @@ components:
       - timestamp
       - components
       title: HealthResponse
+    IndicatorPointSchema:
+      properties:
+        timestamp:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Timestamp
+        value:
+          type: number
+          title: Value
+      type: object
+      required:
+      - timestamp
+      - value
+      title: IndicatorPointSchema
+    IndicatorResponseSchema:
+      properties:
+        symbol:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Symbol
+        timeframe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timeframe
+        price:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Price
+        data_timestamp:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Data Timestamp
+        calculated_at:
+          type: string
+          format: date-time
+          title: Calculated At
+        age_seconds:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Age Seconds
+        is_stale:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Stale
+        sma:
+          $ref: '#/components/schemas/SeriesSchema'
+        ema:
+          $ref: '#/components/schemas/SeriesSchema'
+        rsi:
+          $ref: '#/components/schemas/SeriesSchema'
+        macd:
+          $ref: '#/components/schemas/MACDSchema'
+        atr:
+          $ref: '#/components/schemas/SeriesSchema'
+        bollinger:
+          $ref: '#/components/schemas/BollingerSchema'
+        volume:
+          $ref: '#/components/schemas/VolumeSchema'
+      type: object
+      required:
+      - symbol
+      - timeframe
+      - price
+      - data_timestamp
+      - calculated_at
+      - age_seconds
+      - is_stale
+      - sma
+      - ema
+      - rsi
+      - macd
+      - atr
+      - bollinger
+      - volume
+      title: IndicatorResponseSchema
     LiveTradingGuard:
       properties:
         allowed:
@@ -359,6 +840,106 @@ components:
       required:
       - refresh_token
       title: LogoutRequest
+    MACDSchema:
+      properties:
+        fast_period:
+          type: integer
+          title: Fast Period
+        slow_period:
+          type: integer
+          title: Slow Period
+        signal_period:
+          type: integer
+          title: Signal Period
+        latest_macd:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Macd
+        latest_signal:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Signal
+        latest_histogram:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Histogram
+        macd:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Macd
+        signal:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Signal
+        histogram:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Histogram
+      type: object
+      required:
+      - fast_period
+      - slow_period
+      - signal_period
+      - latest_macd
+      - latest_signal
+      - latest_histogram
+      - macd
+      - signal
+      - histogram
+      title: MACDSchema
+    MarketSession:
+      type: string
+      enum:
+      - PRE_MARKET
+      - REGULAR
+      - AFTER_HOURS
+      - CLOSED
+      title: MarketSession
+    MarketStatusSchema:
+      properties:
+        market:
+          type: string
+          title: Market
+        is_open:
+          type: boolean
+          title: Is Open
+        session:
+          $ref: '#/components/schemas/MarketSession'
+        opens_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Opens At
+        closes_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Closes At
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        provider:
+          type: string
+          title: Provider
+      type: object
+      required:
+      - market
+      - is_open
+      - session
+      - opens_at
+      - closes_at
+      - timestamp
+      - provider
+      title: MarketStatusSchema
     Message:
       properties:
         detail:
@@ -368,6 +949,94 @@ components:
       required:
       - detail
       title: Message
+    QuoteSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        bid:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Bid
+        ask:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Ask
+        last:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Last
+        open:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Open
+        high:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: High
+        low:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Low
+        previous_close:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Previous Close
+        volume:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Volume
+        currency:
+          type: string
+          title: Currency
+        provider:
+          type: string
+          title: Provider
+        market_timestamp:
+          type: string
+          format: date-time
+          title: Market Timestamp
+        received_at:
+          type: string
+          format: date-time
+          title: Received At
+        age_seconds:
+          type: number
+          title: Age Seconds
+        is_stale:
+          type: boolean
+          title: Is Stale
+      type: object
+      required:
+      - symbol
+      - bid
+      - ask
+      - last
+      - open
+      - high
+      - low
+      - previous_close
+      - volume
+      - currency
+      - provider
+      - market_timestamp
+      - received_at
+      - age_seconds
+      - is_stale
+      title: QuoteSchema
     RefreshRequest:
       properties:
         refresh_token:
@@ -399,6 +1068,27 @@ components:
       - email
       - password
       title: RegisterRequest
+    SeriesSchema:
+      properties:
+        period:
+          type: integer
+          title: Period
+        latest:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest
+        values:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Values
+      type: object
+      required:
+      - period
+      - latest
+      - values
+      title: SeriesSchema
     SessionRead:
       properties:
         id:
@@ -463,6 +1153,9 @@ components:
         market_data_provider:
           type: string
           title: Market Data Provider
+        market_data_status:
+          type: string
+          title: Market Data Status
         agent_enabled:
           type: boolean
           title: Agent Enabled
@@ -482,6 +1175,7 @@ components:
       - live_trading_guard
       - broker_provider
       - market_data_provider
+      - market_data_status
       - agent_enabled
       - kill_switch_state
       - server_time
@@ -582,6 +1276,45 @@ components:
       - msg
       - type
       title: ValidationError
+    VolumeSchema:
+      properties:
+        ma_period:
+          type: integer
+          title: Ma Period
+        current_volume:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Volume
+        average_volume:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Average Volume
+        relative_volume:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Relative Volume
+        volume_change_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Volume Change Pct
+        series:
+          items:
+            $ref: '#/components/schemas/IndicatorPointSchema'
+          type: array
+          title: Series
+      type: object
+      required:
+      - ma_period
+      - current_volume
+      - average_volume
+      - relative_volume
+      - volume_change_pct
+      - series
+      title: VolumeSchema
   securitySchemes:
     HTTPBearer:
       type: http

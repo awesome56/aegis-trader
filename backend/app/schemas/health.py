@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-ComponentState = Literal["healthy", "unhealthy", "not_configured"]
+ComponentState = Literal["healthy", "degraded", "unhealthy", "not_configured"]
 
 
 class ComponentHealth(BaseModel):

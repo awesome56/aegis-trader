@@ -183,12 +183,17 @@ cd backend && source .venv/bin/activate && python -m scripts.export_openapi
 
 ## Deployment
 
-The backend runs on the Lenovo server at **https://rider.awesometech.com.ng**
-(paper mode). See [`deploy/README.md`](deploy/README.md) for the full runbook
-(Docker install, private repo clone, secrets, Cloudflare Tunnel / nginx TLS).
+The backend is **live on the Lenovo server at
+https://rider.awesometech.com.ng** (paper mode, Docker + shared Cloudflare
+Tunnel). See [`deploy/README.md`](deploy/README.md) for the full runbook and
+current status.
 
-The mobile app defaults to this backend; copy the private repo locally and point
-it at the server with `--dart-define-from-file=dart_defines/prod.json`.
+The mobile app defaults to this backend; build it with the production defines:
+
+```bash
+cd mobile
+flutter build apk --release --dart-define-from-file=dart_defines/prod.json
+```
 
 ## Development phases
 

@@ -45,14 +45,22 @@ The API is then reachable **on the server** at
 
 No router changes and TLS is handled by Cloudflare.
 
-1. In the Cloudflare Zero Trust dashboard create a tunnel (e.g. `aegis-lenovo`).
-2. Add a public hostname: `rider.awesometech.com.ng` → `http://backend:8000`
-   (or `http://localhost:8000` if running cloudflared on the host).
-3. Copy the tunnel token into `.env.prod` as `CLOUDFLARE_TUNNEL_TOKEN`.
-4. Start it:
+This server already runs the shared `examco-tunnel` (`77474f43-…`, service
+`cloudflared`) that fronts `agent`, `files`, `qa`, `power`, etc. `rider` was
+added to that same tunnel, so no new tunnel is required.
 
 ```bash
-./deploy/deploy.sh --with-tunnel
+# one-off (already done):
+sudo python3 deploy/cloudflare/add_ingress.py \
+    rider.awesometech.com.ng http://localhost:8899
+cloudflared tunnel route dns examco-tunnel rider.awesometech.com.ng
+sudo systemctl restart cloudflared
+```
+
+Live check:
+
+```bash
+curl https://rider.awesometech.com.ng/api/v1/health
 ```
 
 ### Option B: router port-forwarding + host nginx + Let's Encrypt
@@ -81,6 +89,25 @@ git pull
 docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f backend
 docker compose --env-file .env.prod -f docker-compose.prod.yml ps
 ```
+
+Rotate the owner password (the seed script creates a temporary one):
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T backend \
+  python -m scripts.set_password --email owner@awesometech.com.ng --password 'new-strong-password'
+```
+
+## 5. Current live state
+
+| Item | Value |
+|------|-------|
+| Public API | https://rider.awesometech.com.ng |
+| OpenAPI YAML | https://rider.awesometech.com.ng/api/docs/openapi.yaml |
+| ReDoc | https://rider.awesometech.com.ng/api/docs |
+| Health | https://rider.awesometech.com.ng/api/v1/health |
+| Backend bind | `127.0.0.1:8899` (Docker → container :8000) |
+| Tunnel | shared `examco-tunnel` (`cloudflared.service`) |
+| Trading mode | paper (live interlock locked) |
 
 ## Notes / cautions
 

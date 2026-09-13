@@ -4565,18 +4565,62 @@ components:
           - type: string
           - type: 'null'
           title: Name
+        provider:
+          type: string
+          title: Provider
         price:
           anyOf:
           - type: string
             pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
           - type: 'null'
           title: Price
+        bid:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Bid
+        ask:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Ask
+        previous_close:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Previous Close
+        change:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Change
         change_pct:
           anyOf:
           - type: string
             pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
           - type: 'null'
           title: Change Pct
+        change_window:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Change Window
+        day_high:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Day High
+        day_low:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Day Low
         volume:
           anyOf:
           - type: integer
@@ -4609,18 +4653,63 @@ components:
             format: date-time
           - type: 'null'
           title: Quote Time
+        last_candle_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Candle Time
+        signal_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Signal Time
+        signal_expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Signal Expires At
+        age_seconds:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Age Seconds
         is_stale:
           type: boolean
           title: Is Stale
           default: false
+        market_closed:
+          type: boolean
+          title: Market Closed
+          default: false
+        session:
+          type: string
+          title: Session
+          default: OPEN
       type: object
       required:
       - symbol
+      - provider
       title: MarketOverviewItemSchema
     MarketOverviewSchema:
       properties:
         status:
           $ref: '#/components/schemas/MarketStatusSchema'
+        provider:
+          type: string
+          title: Provider
+        is_open:
+          type: boolean
+          title: Is Open
+        session:
+          type: string
+          title: Session
+        as_of:
+          type: string
+          format: date-time
+          title: As Of
         items:
           items:
             $ref: '#/components/schemas/MarketOverviewItemSchema'
@@ -4629,6 +4718,10 @@ components:
       type: object
       required:
       - status
+      - provider
+      - is_open
+      - session
+      - as_of
       - items
       title: MarketOverviewSchema
     MarketRegime:

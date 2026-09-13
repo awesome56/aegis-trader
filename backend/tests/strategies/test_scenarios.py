@@ -108,6 +108,23 @@ async def test_seed_persists_signals_and_dedupes(db_session) -> None:
     assert await signals.count_signals() == first
 
 
+async def test_market_overview_includes_signals_without_lazy_load(db_session) -> None:
+    """Regression: persisted signals must not trigger a strategy lazy-load."""
+    settings = scenario_settings("uptrend")
+    await seed(db_session, settings, symbols=[SYMBOL], timeframe="1h", enable=True)
+
+    from app.api.v1.markets import market_overview
+    from app.market.services.market_data import MarketDataService
+
+    service = MarketDataService(
+        db_session, provider=MockMarketDataProvider(settings), settings=settings
+    )
+    overview = await market_overview(service, db_session)
+    row = next(item for item in overview.items if item.symbol == SYMBOL)
+    assert row.signal_direction == "LONG"
+    assert row.strategy == "trend_following"
+
+
 async def test_seed_creates_no_proposals_or_orders(db_session) -> None:
     settings = scenario_settings("mean_reversion_oversold")
     await seed(db_session, settings, symbols=[SYMBOL], timeframe="1h", enable=True)

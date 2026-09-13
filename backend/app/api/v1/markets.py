@@ -45,10 +45,11 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
     from decimal import Decimal
 
     from app.core.config import get_settings
-    from app.repositories.strategy import StrategySignalRepository
+    from app.repositories.strategy import StrategyRepository, StrategySignalRepository
 
     settings = get_settings()
     signals = await StrategySignalRepository(session).list_signals(limit=500)
+    strategies = {row.id: row for row in await StrategyRepository(session).list_all()}
     latest: dict[str, object] = {}
     for signal in signals:
         latest.setdefault(signal.symbol, signal)
@@ -66,6 +67,7 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
                 (quote.last - quote.previous_close) / quote.previous_close * Decimal("100")
             )
         signal = latest.get(symbol)
+        strategy = strategies.get(signal.strategy_id) if signal else None
         asset = await service.get_asset(symbol)
         items.append(
             MarketOverviewItemSchema(
@@ -75,7 +77,7 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
                 change_pct=change_pct,
                 volume=quote.volume,
                 signal_direction=signal.direction.value if signal else None,
-                strategy=signal.strategy.slug if signal and signal.strategy else None,
+                strategy=strategy.slug if strategy else None,
                 confidence=signal.confidence if signal else None,
                 market_regime=signal.market_regime.value
                 if signal and signal.market_regime

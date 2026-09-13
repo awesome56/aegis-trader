@@ -2112,6 +2112,210 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/ai/providers:
+    get:
+      tags:
+      - ai
+      summary: List AI providers
+      operationId: list_providers_api_v1_ai_providers_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ProviderSchema'
+                type: array
+                title: Response List Providers Api V1 Ai Providers Get
+      security:
+      - HTTPBearer: []
+    post:
+      tags:
+      - ai
+      summary: Create an AI provider config
+      operationId: create_provider_api_v1_ai_providers_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/ai/providers/supported:
+    get:
+      tags:
+      - ai
+      summary: Supported providers
+      operationId: supported_api_v1_ai_providers_supported_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderCatalogSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/ai/providers/{config_id}:
+    get:
+      tags:
+      - ai
+      summary: AI provider detail
+      operationId: get_provider_api_v1_ai_providers__config_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: config_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Config Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - ai
+      summary: Update AI provider
+      operationId: update_provider_api_v1_ai_providers__config_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: config_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Config Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - ai
+      summary: Delete AI provider
+      operationId: delete_provider_api_v1_ai_providers__config_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: config_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Config Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/ai/providers/{config_id}/test:
+    post:
+      tags:
+      - ai
+      summary: Test provider connection
+      operationId: test_provider_api_v1_ai_providers__config_id__test_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: config_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Config Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderTestResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/ai/providers/{config_id}/activate:
+    post:
+      tags:
+      - ai
+      summary: Activate provider
+      operationId: activate_provider_api_v1_ai_providers__config_id__activate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: config_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Config Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -4721,6 +4925,213 @@ components:
       - CANCELLED
       - FAILED
       title: ProposalStatus
+    ProviderCatalogItem:
+      properties:
+        key:
+          type: string
+          title: Key
+        requires_base_url:
+          type: boolean
+          title: Requires Base Url
+        default_base_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Base Url
+      type: object
+      required:
+      - key
+      - requires_base_url
+      title: ProviderCatalogItem
+    ProviderCatalogSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProviderCatalogItem'
+          type: array
+          title: Items
+      type: object
+      required:
+      - items
+      title: ProviderCatalogSchema
+    ProviderCreateRequest:
+      properties:
+        provider:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Provider
+        model:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Model
+        api_key:
+          type: string
+          maxLength: 512
+          minLength: 1
+          title: Api Key
+        base_url:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Base Url
+        enabled:
+          type: boolean
+          title: Enabled
+          default: true
+        make_default:
+          type: boolean
+          title: Make Default
+          default: false
+      type: object
+      required:
+      - provider
+      - model
+      - api_key
+      title: ProviderCreateRequest
+    ProviderModelSchema:
+      properties:
+        id:
+          type: string
+          title: Id
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
+      type: object
+      required:
+      - id
+      title: ProviderModelSchema
+    ProviderSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        provider:
+          type: string
+          title: Provider
+        model:
+          type: string
+          title: Model
+        base_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Base Url
+        configured:
+          type: boolean
+          title: Configured
+        api_key_masked:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Api Key Masked
+        enabled:
+          type: boolean
+          title: Enabled
+        is_default:
+          type: boolean
+          title: Is Default
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+        last_tested_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Tested At
+        last_error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Error
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - provider
+      - model
+      - base_url
+      - configured
+      - api_key_masked
+      - enabled
+      - is_default
+      - status
+      - last_tested_at
+      - last_error
+      - created_at
+      - updated_at
+      title: ProviderSchema
+    ProviderStatus:
+      type: string
+      enum:
+      - NOT_CONFIGURED
+      - UNTESTED
+      - CONNECTED
+      - ERROR
+      - DISABLED
+      title: ProviderStatus
+    ProviderTestResponse:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+        status:
+          type: string
+          title: Status
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+        models:
+          items:
+            $ref: '#/components/schemas/ProviderModelSchema'
+          type: array
+          title: Models
+      type: object
+      required:
+      - ok
+      - status
+      title: ProviderTestResponse
+    ProviderUpdateRequest:
+      properties:
+        model:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Model
+        api_key:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Api Key
+        base_url:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Base Url
+        enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Enabled
+      type: object
+      title: ProviderUpdateRequest
     QuoteSchema:
       properties:
         symbol:

@@ -153,6 +153,19 @@ class NotificationSeverity(StrEnum):
     CRITICAL = "CRITICAL"
 
 
+class ProviderStatus(StrEnum):
+    NOT_CONFIGURED = "NOT_CONFIGURED"
+    UNTESTED = "UNTESTED"
+    CONNECTED = "CONNECTED"
+    ERROR = "ERROR"
+    DISABLED = "DISABLED"
+
+
+class AgentMode(StrEnum):
+    ANALYSIS_ONLY = "ANALYSIS_ONLY"
+    PROPOSE = "PROPOSE"
+
+
 class BrokerMode(StrEnum):
     PAPER = "PAPER"
     LIVE = "LIVE"

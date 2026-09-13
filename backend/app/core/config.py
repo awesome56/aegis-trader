@@ -203,6 +203,25 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.0
     AGENT_ENABLED: bool = False
 
+    # --- AI providers (Phase 9) ---------------------------------------------
+    AI_ENABLED: bool = True
+    # urlsafe base64 32-byte Fernet key; required to store/read API tokens.
+    AI_CREDENTIAL_ENCRYPTION_KEY: str = ""
+    AI_ALLOW_CUSTOM_BASE_URL: bool = True
+    AI_ALLOW_PRIVATE_BASE_URL: bool = False
+    AI_ALLOW_HTTP_BASE_URL: bool = False
+    AI_HTTP_TIMEOUT_SECONDS: float = 30.0
+
+    # --- TradingAnalysisAgent (Phase 9B) -------------------------------------
+    AGENT_DEFAULT_MODE: str = "ANALYSIS_ONLY"
+    AGENT_MAX_TOOL_ITERATIONS: int = 8
+    AGENT_RUN_TIMEOUT_SECONDS: int = 60
+    AGENT_MAX_CONCURRENT_RUNS_PER_USER: int = 2
+    AGENT_MAX_RUNS_PER_MINUTE: int = 10
+    AGENT_MAX_OUTPUT_TOKENS: int = 1500
+    AGENT_TEMPERATURE: float = 0.0
+    AGENT_MAX_PROMPT_CHARS: int = 2000
+
     # --- Risk settings (conservative examples, not financial advice) --------
     MAX_POSITION_PERCENTAGE: float = 5.0
     MAX_PORTFOLIO_EXPOSURE: float = 80.0

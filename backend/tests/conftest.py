@@ -23,6 +23,10 @@ os.environ.update(
         "TRADING_MODE": "paper",
         "LIVE_TRADING_ENABLED": "false",
         "PAPER_INITIAL_BALANCE": "100000.00",
+        # Deterministic Fernet key so provider credential tests are reproducible.
+        "AI_CREDENTIAL_ENCRYPTION_KEY": "anJx1JenM3gL2DCAXKRoSDMEmYAmYiqJkQB6-4-tZpc=",
+        "AI_ENABLED": "true",
+        "AGENT_ENABLED": "true",
     }
 )
 

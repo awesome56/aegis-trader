@@ -14,6 +14,7 @@ export const primaryNav: NavItem[] = [
   { label: 'Trades', to: '/trades', icon: 'i-lucide-arrow-left-right' },
   { label: 'Orders', to: '/orders', icon: 'i-lucide-clipboard-list' },
   { label: 'Proposals', to: '/agent/proposals', icon: 'i-lucide-file-text' },
+  { label: 'Agent', to: '/agent', icon: 'i-lucide-bot' },
   { label: 'Strategies', to: '/strategies', icon: 'i-lucide-workflow' },
   { label: 'Risk', to: '/risk', icon: 'i-lucide-shield-alert' },
   { label: 'Backtests', to: '/backtests', icon: 'i-lucide-flask-conical' },

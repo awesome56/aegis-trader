@@ -31,7 +31,15 @@ export const queryKeys = {
   order: (id: string) => ['orders', id] as const,
 
   agentStatus: ['agent', 'status'] as const,
-  decisions: (params: PageParams = {}) => ['agent', 'decisions', params] as const,
+  agentRunsRoot: ['agent', 'runs'] as const,
+  agentRuns: (params: PageParams = {}) => ['agent', 'runs', params] as const,
+  agentRun: (id: string) => ['agent', 'runs', id] as const,
+  agentDecisionsRoot: ['agent', 'decisions'] as const,
+  agentDecisions: (params: PageParams = {}) => ['agent', 'decisions', params] as const,
+  agentDecision: (id: string) => ['agent', 'decisions', id] as const,
+
+  aiProviders: ['ai', 'providers'] as const,
+  aiProviderCatalog: ['ai', 'providers', 'supported'] as const,
   proposalsRoot: ['proposals'] as const,
   proposals: (params: PageParams = {}) => ['proposals', params] as const,
   proposal: (id: string) => ['proposals', id] as const,

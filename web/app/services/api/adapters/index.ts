@@ -6,6 +6,8 @@ export type { DashboardSource } from './dashboard'
 export { toAllocationBreakdown, toPortfolioHistory, toPortfolioSummary, toSnapshotPoint } from './portfolio'
 export { toPosition, toPositionDetail } from './positions'
 export { toActivityEvent, toActivityPage } from './activity'
+export { toAgentDecisionPage, toAgentDecisionRecord, toAgentRun, toAgentRunPage, toAgentRuntimeStatus } from './agent'
+export { toAiProvider, toProviderCatalog, toProviderTest } from './ai'
 export { toBacktest, toBacktestPage, toBacktestResult } from './backtest'
 export { toNotification, toNotificationPage } from './notifications'
 export {

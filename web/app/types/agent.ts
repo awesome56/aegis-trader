@@ -162,3 +162,72 @@ export interface ProposalCreateInput {
   reasoning_summary?: string | null
   idempotency_key?: string
 }
+
+// --- Phase 9: TradingAnalysisAgent -----------------------------------------
+
+export type AgentMode = 'ANALYSIS_ONLY' | 'PROPOSE'
+
+export type AgentRunStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+
+export interface AgentRun {
+  id: string
+  status: AgentRunStatus
+  provider: string | null
+  model: string | null
+  mode: AgentMode
+  symbols: string[]
+  prompt: string | null
+  error: string | null
+  latency_ms: number | null
+  tokens_used: number | null
+  usage: Record<string, unknown> | null
+  proposal_id: string | null
+  started_at: ISODateString | null
+  completed_at: ISODateString | null
+  created_at: ISODateString
+}
+
+export interface AgentRuntimeStatus {
+  enabled: boolean
+  default_mode: string
+  provider: string | null
+  model: string | null
+  provider_status: string
+  provider_config_id: string | null
+  running: number
+  runs_today: number
+  recent_failures: number
+  last_run: AgentRun | null
+}
+
+export interface AgentDecisionRecord {
+  id: string
+  agent_run_id: string | null
+  symbol: string
+  action: OrderAction
+  confidence: Numeric
+  reasoning_summary: string | null
+  evidence: AgentEvidenceRecord[] | null
+  concerns: string[] | null
+  proposal_recommended: boolean
+  market_regime: MarketRegime | null
+  strategy_signal_ids: string[] | null
+  proposal_id: string | null
+  created_at: ISODateString
+}
+
+export interface AgentEvidenceRecord {
+  type: string
+  source: string
+  direction?: string | null
+  confidence?: Numeric | null
+  data?: Record<string, unknown>
+}
+
+export interface AnalyzeInput {
+  symbol: string
+  timeframe: string
+  mode: AgentMode
+  provider_config_id?: string
+  prompt?: string
+}

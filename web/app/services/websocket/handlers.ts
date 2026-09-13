@@ -132,6 +132,35 @@ export function applyEventToCache(queryClient: QueryClient, event: AnyTradingEve
       break
     }
 
+    case WS_EVENTS.agentStarted:
+    case WS_EVENTS.agentAssetAnalysis:
+    case WS_EVENTS.agentCompleted:
+    case WS_EVENTS.agentRunCreated:
+    case WS_EVENTS.agentToolCalled: {
+      invalidate(queryKeys.agentStatus)
+      invalidate(queryKeys.agentRunsRoot)
+      invalidate(queryKeys.agentDecisionsRoot)
+      const runId = typeof data.run_id === 'string' ? data.run_id : null
+      if (runId) invalidate(queryKeys.agentRun(runId))
+      break
+    }
+
+    case WS_EVENTS.agentProposalCreated:
+      invalidate(queryKeys.agentRunsRoot)
+      invalidate(queryKeys.agentDecisionsRoot)
+      invalidate(queryKeys.proposalsRoot)
+      invalidate(queryKeys.notificationsRoot)
+      invalidate(queryKeys.notificationUnread)
+      break
+
+    case WS_EVENTS.agentFailed:
+      invalidate(queryKeys.agentStatus)
+      invalidate(queryKeys.agentRunsRoot)
+      invalidate(queryKeys.agentDecisionsRoot)
+      invalidate(queryKeys.notificationsRoot)
+      invalidate(queryKeys.notificationUnread)
+      break
+
     case WS_EVENTS.systemStatusChanged:
       invalidate(queryKeys.systemStatus)
       break

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  toAgentDecisionPage,
+  toAgentRunPage,
+  toAgentRuntimeStatus,
+  toAiProvider,
   toAllocationBreakdown,
   toBacktest,
   toBacktestPage,
@@ -602,6 +606,40 @@ describe('adapters', () => {
     expect(result.equity_curve).toHaveLength(1)
     expect(result.trades[0]?.net_pnl).toBe('985')
     expect(result.monthly_returns[0]?.month).toBe('2025-01')
+  })
+
+  it('maps AI providers and agent shapes', () => {
+    const provider = toAiProvider({
+      id: 'p-1', provider: 'openai', model: 'gpt-4o-mini', base_url: null,
+      configured: true, api_key_masked: '••••••1234', enabled: true, is_default: true,
+      status: 'CONNECTED', last_tested_at: '2026-01-15T15:00:00+00:00', last_error: null,
+      created_at: '2026-01-15T15:00:00+00:00', updated_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(provider.status).toBe('CONNECTED')
+    expect(provider.api_key_masked).toBe('••••••1234')
+
+    const status = toAgentRuntimeStatus({
+      enabled: true, default_mode: 'ANALYSIS_ONLY', provider: 'openai', model: 'gpt-4o-mini',
+      provider_status: 'CONNECTED', provider_config_id: 'p-1', running: 0, runs_today: 2,
+      recent_failures: 0, last_run: null,
+    })
+    expect(status.provider).toBe('openai')
+    expect(status.last_run).toBeNull()
+
+    const runPage = toAgentRunPage({
+      items: [{ id: 'r-1', status: 'COMPLETED', provider: 'openai', model: 'm', mode: 'PROPOSE', symbols: ['AAPL'], prompt: null, error: null, latency_ms: 12, tokens_used: 30, usage: null, proposal_id: 'pr-9', started_at: null, completed_at: null, created_at: '2026-01-15T15:00:00+00:00' }],
+      total: 1, page: 1, page_size: 25,
+    })
+    expect(runPage.items[0]?.mode).toBe('PROPOSE')
+    expect(runPage.items[0]?.proposal_id).toBe('pr-9')
+
+    const decisionPage = toAgentDecisionPage({
+      items: [{ id: 'd-1', agent_run_id: 'r-1', symbol: 'AAPL', action: 'BUY', confidence: '0.7', reasoning_summary: 'ok', evidence: [{ type: 'strategy_signal', source: 'momentum', direction: 'LONG', confidence: '0.7', data: { rsi: '61' } }], concerns: ['earnings'], proposal_recommended: true, market_regime: 'BULLISH', strategy_signal_ids: ['s-1'], proposal_id: 'pr-9', created_at: '2026-01-15T15:00:00+00:00' }],
+      total: 1, page: 1, page_size: 25,
+    })
+    expect(decisionPage.items[0]?.action).toBe('BUY')
+    expect(decisionPage.items[0]?.evidence?.[0]?.source).toBe('momentum')
+    expect(decisionPage.items[0]?.concerns).toEqual(['earnings'])
   })
 
   it('assembles dashboard data from multiple sources', () => {

@@ -344,8 +344,101 @@ export interface RawBacktestTrade {
   exit_reason: string
 }
 
-export interface RawBacktestResult {
-  backtest_id: string
+export interface RawAiProvider {
+  id: string
+  provider: string
+  model: string
+  base_url: string | null
+  configured: boolean
+  api_key_masked: string | null
+  enabled: boolean
+  is_default: boolean
+  status: string
+  last_tested_at: string | null
+  last_error: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RawProviderTest {
+  ok: boolean
+  status: string
+  detail: string | null
+  models: { id: string; label: string | null }[]
+}
+
+export interface RawProviderCatalogItem {
+  key: string
+  requires_base_url: boolean
+  default_base_url: string | null
+}
+
+export interface RawProviderCatalog {
+  items: RawProviderCatalogItem[]
+}
+
+export interface RawAgentStatus {
+  enabled: boolean
+  default_mode: string
+  provider: string | null
+  model: string | null
+  provider_status: string
+  provider_config_id: string | null
+  running: number
+  runs_today: number
+  recent_failures: number
+  last_run: Record<string, unknown> | null
+}
+
+export interface RawAgentRun {
+  id: string
+  status: string
+  provider: string | null
+  model: string | null
+  mode: string
+  symbols: string[]
+  prompt: string | null
+  error: string | null
+  latency_ms: number | null
+  tokens_used: number | null
+  usage: Record<string, unknown> | null
+  proposal_id: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface RawAgentDecision {
+  id: string
+  agent_run_id: string | null
+  symbol: string
+  action: string
+  confidence: Numeric
+  reasoning_summary: string | null
+  evidence: { type: string; source: string; direction?: string | null; confidence?: Numeric | null; data?: Record<string, unknown> }[] | null
+  concerns: string[] | null
+  proposal_recommended: boolean
+  market_regime: string | null
+  strategy_signal_ids: string[] | null
+  proposal_id: string | null
+  created_at: string
+}
+
+export interface RawAgentRunPage {
+  items: RawAgentRun[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface RawAgentDecisionPage {
+  items: RawAgentDecision[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface RawBacktestResult {  backtest_id: string
   engine_version: string | null
   strategy_config: Record<string, unknown> | null
   metrics: RawBacktestMetrics

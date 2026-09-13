@@ -110,6 +110,8 @@ function tone(value: ComponentStatus | undefined): 'success' | 'warning' | 'dang
         <p v-if="status" class="mt-2 text-[11px] text-muted">Server time {{ formatDateTime(status.server_time) }}</p>
       </section>
 
+      <AiProvidersSettings />
+
       <section class="rounded-lg border border-default bg-elevated/20 p-4">
         <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Manage</h2>
         <div class="mt-3 flex flex-wrap gap-2">

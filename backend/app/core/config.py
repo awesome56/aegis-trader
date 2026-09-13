@@ -131,6 +131,10 @@ class Settings(BaseSettings):
     TWELVE_DATA_BASE_URL: str = "https://api.twelvedata.com"
     # Kraken public market data (crypto, keyless)
     KRAKEN_BASE_URL: str = "https://api.kraken.com"
+    # Composite provider: per-asset-class routing
+    MARKET_EQUITY_PROVIDER: str = "mock"
+    MARKET_CRYPTO_PROVIDER: str = "kraken"
+    MARKET_FOREX_PROVIDER: str = "twelvedata"
 
     # --- Market data: deterministic mock provider ----------------------------
     MOCK_MARKET_SEED: int = 42

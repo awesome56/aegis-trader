@@ -118,6 +118,9 @@ class Settings(BaseSettings):
     MOCK_MARKET_START_PRICE: float = 100.0
     MOCK_MARKET_VOLATILITY: float = 0.02
     MOCK_MARKET_IS_OPEN: bool = True
+    # Deterministic scenario mode (empty = pseudo-random walk). See
+    # app/market/providers/scenarios.py.
+    MOCK_MARKET_SCENARIO: str = ""
 
     # --- Market data: CSV provider -------------------------------------------
     CSV_MARKET_DATA_PATH: str = ""

@@ -24,6 +24,7 @@ from app.market.domain.models import (
 )
 from app.market.enums import MarketSession, ProviderStatus, Timeframe
 from app.market.exceptions import AssetNotFoundError, InvalidMarketDataError
+from app.market.providers import scenarios
 from app.market.providers.base import MarketDataProvider
 from app.market.validation import to_decimal
 
@@ -87,6 +88,43 @@ class MockMarketDataProvider(MarketDataProvider):
     def _symbol_base(self) -> dict[str, Decimal]:
         return self._base_cache
 
+    def _scenario(self) -> str | None:
+        return scenarios.normalise_scenario(self._settings.MOCK_MARKET_SCENARIO)
+
+    def _build_scenario_candles(
+        self,
+        symbol: str,
+        timeframe: Timeframe,
+        timestamps: list[datetime],
+        scenario: str,
+    ) -> list[Candle]:
+        base = float(self._symbol_base()[symbol])
+        count = len(timestamps)
+        closes = scenarios.scenario_closes(scenario, count, base)
+        volumes = scenarios.scenario_volumes(scenario, count)
+        env = scenarios.envelope(scenario)
+        candles: list[Candle] = []
+        for index, open_time in enumerate(timestamps):
+            close_price = closes[index]
+            open_price = closes[index - 1] if index > 0 else close_price * (1 - env)
+            high_price = max(open_price, close_price) * (1 + env)
+            low_price = min(open_price, close_price) * (1 - env)
+            candles.append(
+                Candle(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    open_time=open_time,
+                    close_time=open_time + timeframe.duration,
+                    open=to_decimal(open_price),
+                    high=to_decimal(max(high_price, open_price, close_price)),
+                    low=to_decimal(min(low_price, open_price, close_price)),
+                    close=to_decimal(close_price),
+                    volume=volumes[index],
+                    provider=self.name,
+                )
+            )
+        return candles
+
     def _build_candle(self, symbol: str, timeframe: Timeframe, open_time: datetime) -> Candle:
         volatility = self._settings.MOCK_MARKET_VOLATILITY
         index = int(open_time.timestamp()) // timeframe.seconds
@@ -126,25 +164,35 @@ class MockMarketDataProvider(MarketDataProvider):
         if end < start:
             raise InvalidMarketDataError("end must be greater than or equal to start")
         aligned = _floor_to(start, timeframe)
-        candles: list[Candle] = []
+        timestamps: list[datetime] = []
         cursor = aligned
         while cursor <= end:
-            candles.append(self._build_candle(symbol, timeframe, cursor))
+            timestamps.append(cursor)
             cursor += timeframe.duration
-            if len(candles) > _MAX_GENERATED_CANDLES:
-                # Keep the most recent window rather than failing the request.
-                candles = candles[-_MAX_GENERATED_CANDLES:]
+            if len(timestamps) > _MAX_GENERATED_CANDLES:
+                timestamps = timestamps[-_MAX_GENERATED_CANDLES:]
                 break
-        return candles
+        scenario = self._scenario()
+        if scenario:
+            return self._build_scenario_candles(symbol, timeframe, timestamps, scenario)
+        return [self._build_candle(symbol, timeframe, ts) for ts in timestamps]
 
     # --- provider contract --------------------------------------------------
     async def get_quote(self, symbol: str) -> MarketQuote:
         normalized = self._ensure_known(symbol)
         now = self._now()
         timeframe = Timeframe.ONE_MINUTE
-        current_open = _floor_to(now, timeframe)
-        current = self._build_candle(normalized, timeframe, current_open)
-        previous = self._build_candle(normalized, timeframe, current_open - timeframe.duration)
+        scenario = self._scenario()
+        if scenario:
+            end = _floor_to(now, timeframe)
+            timestamps = [end - timeframe.duration * (63 - index) for index in range(64)]
+            series = self._build_scenario_candles(normalized, timeframe, timestamps, scenario)
+            current = series[-1]
+            previous = series[-2]
+        else:
+            current_open = _floor_to(now, timeframe)
+            current = self._build_candle(normalized, timeframe, current_open)
+            previous = self._build_candle(normalized, timeframe, current_open - timeframe.duration)
 
         spread = current.close * Decimal("0.0001")
         return MarketQuote(

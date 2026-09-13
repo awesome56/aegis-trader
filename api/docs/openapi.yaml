@@ -2493,6 +2493,337 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/brokers/connections:
+    get:
+      tags:
+      - brokers
+      summary: List Connections
+      operationId: list_connections_api_v1_brokers_connections_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BrokerConnectionSchema'
+                type: array
+                title: Response List Connections Api V1 Brokers Connections Get
+      security:
+      - HTTPBearer: []
+    post:
+      tags:
+      - brokers
+      summary: Create Connection
+      operationId: create_connection_api_v1_brokers_connections_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrokerConnectionCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerConnectionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/brokers/connections/{connection_id}:
+    get:
+      tags:
+      - brokers
+      summary: Get Connection
+      operationId: get_connection_api_v1_brokers_connections__connection_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: connection_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Connection Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerConnectionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - brokers
+      summary: Update Connection
+      operationId: update_connection_api_v1_brokers_connections__connection_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: connection_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Connection Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrokerConnectionUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerConnectionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - brokers
+      summary: Delete Connection
+      operationId: delete_connection_api_v1_brokers_connections__connection_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: connection_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Connection Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/brokers/connections/{connection_id}/test:
+    post:
+      tags:
+      - brokers
+      summary: Test Connection
+      operationId: test_connection_api_v1_brokers_connections__connection_id__test_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: connection_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Connection Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerConnectionTestResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/brokers/connections/{connection_id}/activate:
+    post:
+      tags:
+      - brokers
+      summary: Activate Connection
+      operationId: activate_connection_api_v1_brokers_connections__connection_id__activate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: connection_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Connection Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerConnectionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auto-trading/status:
+    get:
+      tags:
+      - auto-trading
+      summary: Auto-trading status
+      operationId: status_api_v1_auto_trading_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTradingStatusSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/auto-trading/{account_id}/policy:
+    get:
+      tags:
+      - auto-trading
+      summary: Get account policy
+      operationId: get_policy_api_v1_auto_trading__account_id__policy_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Account Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTradingPolicySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - auto-trading
+      summary: Update account policy
+      operationId: update_policy_api_v1_auto_trading__account_id__policy_put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Account Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoTradingPolicyUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTradingPolicySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auto-trading/{account_id}/enable:
+    post:
+      tags:
+      - auto-trading
+      summary: Enable auto trading
+      operationId: enable_api_v1_auto_trading__account_id__enable_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Account Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoTradingEnableRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTradingPolicySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auto-trading/{account_id}/disable:
+    post:
+      tags:
+      - auto-trading
+      summary: Disable auto trading
+      operationId: disable_api_v1_auto_trading__account_id__disable_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Account Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTradingPolicySchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -2999,6 +3330,297 @@ components:
       - user
       - tokens
       title: AuthResponse
+    AutoTradingAccountStatus:
+      properties:
+        broker_account_id:
+          type: string
+          format: uuid
+          title: Broker Account Id
+        provider:
+          type: string
+          title: Provider
+        account_name:
+          type: string
+          title: Account Name
+        environment:
+          $ref: '#/components/schemas/BrokerEnvironment'
+        enabled:
+          type: boolean
+          title: Enabled
+        trading_state:
+          type: string
+          title: Trading State
+        policy:
+          $ref: '#/components/schemas/AutoTradingPolicySchema'
+      type: object
+      required:
+      - broker_account_id
+      - provider
+      - account_name
+      - environment
+      - enabled
+      - trading_state
+      - policy
+      title: AutoTradingAccountStatus
+    AutoTradingEnableRequest:
+      properties:
+        confirm:
+          type: boolean
+          title: Confirm
+          default: false
+        phrase:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Phrase
+      type: object
+      title: AutoTradingEnableRequest
+    AutoTradingPolicySchema:
+      properties:
+        id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Id
+        broker_account_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Broker Account Id
+        environment:
+          $ref: '#/components/schemas/BrokerEnvironment'
+        enabled:
+          type: boolean
+          title: Enabled
+        allow_open:
+          type: boolean
+          title: Allow Open
+        allow_add:
+          type: boolean
+          title: Allow Add
+        allow_reduce:
+          type: boolean
+          title: Allow Reduce
+        allow_close:
+          type: boolean
+          title: Allow Close
+        allow_cancel:
+          type: boolean
+          title: Allow Cancel
+        allow_replace:
+          type: boolean
+          title: Allow Replace
+        allow_manage_manual_positions:
+          type: boolean
+          title: Allow Manage Manual Positions
+        allow_manage_manual_orders:
+          type: boolean
+          title: Allow Manage Manual Orders
+        allowed_asset_classes:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Allowed Asset Classes
+        allowed_symbols:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Allowed Symbols
+        max_trade_notional:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Trade Notional
+        max_position_notional:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Position Notional
+        max_trades_per_day:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Trades Per Day
+        cooldown_seconds:
+          type: integer
+          title: Cooldown Seconds
+          default: 0
+        min_agent_confidence:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Agent Confidence
+        require_strategy_signal:
+          type: boolean
+          title: Require Strategy Signal
+          default: false
+        min_strategy_confidence:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Strategy Confidence
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      type: object
+      required:
+      - environment
+      - enabled
+      - allow_open
+      - allow_add
+      - allow_reduce
+      - allow_close
+      - allow_cancel
+      - allow_replace
+      - allow_manage_manual_positions
+      - allow_manage_manual_orders
+      title: AutoTradingPolicySchema
+    AutoTradingPolicyUpdateRequest:
+      properties:
+        allow_open:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Open
+        allow_add:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Add
+        allow_reduce:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Reduce
+        allow_close:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Close
+        allow_cancel:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Cancel
+        allow_replace:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Replace
+        allow_manage_manual_positions:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Manage Manual Positions
+        allow_manage_manual_orders:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Allow Manage Manual Orders
+        allowed_asset_classes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Allowed Asset Classes
+        allowed_symbols:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Allowed Symbols
+        max_trade_notional:
+          anyOf:
+          - type: number
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Trade Notional
+        max_position_notional:
+          anyOf:
+          - type: number
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Position Notional
+        max_trades_per_day:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Trades Per Day
+        cooldown_seconds:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Cooldown Seconds
+        min_agent_confidence:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Agent Confidence
+        require_strategy_signal:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Require Strategy Signal
+        min_strategy_confidence:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Min Strategy Confidence
+        notes:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Notes
+      type: object
+      title: AutoTradingPolicyUpdateRequest
+    AutoTradingStatusSchema:
+      properties:
+        live_trading_allowed:
+          type: boolean
+          title: Live Trading Allowed
+        demo_any_enabled:
+          type: boolean
+          title: Demo Any Enabled
+        live_any_enabled:
+          type: boolean
+          title: Live Any Enabled
+        accounts:
+          items:
+            $ref: '#/components/schemas/AutoTradingAccountStatus'
+          type: array
+          title: Accounts
+      type: object
+      required:
+      - live_trading_allowed
+      - demo_any_enabled
+      - live_any_enabled
+      - accounts
+      title: AutoTradingStatusSchema
     BacktestCreateRequest:
       properties:
         strategy_id:
@@ -3624,6 +4246,176 @@ components:
       - created_at
       - updated_at
       title: BrokerAccountSchema
+    BrokerConnectionCreateRequest:
+      properties:
+        provider:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Provider
+        environment:
+          $ref: '#/components/schemas/BrokerEnvironment'
+        account_external_id:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Account External Id
+        api_key:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Api Key
+        api_secret:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Api Secret
+        access_token:
+          anyOf:
+          - type: string
+            maxLength: 1024
+          - type: 'null'
+          title: Access Token
+        enabled:
+          type: boolean
+          title: Enabled
+          default: true
+        make_default:
+          type: boolean
+          title: Make Default
+          default: false
+      type: object
+      required:
+      - provider
+      - environment
+      title: BrokerConnectionCreateRequest
+    BrokerConnectionSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        provider:
+          type: string
+          title: Provider
+        environment:
+          $ref: '#/components/schemas/BrokerEnvironment'
+        account_external_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Account External Id
+        configured:
+          type: boolean
+          title: Configured
+        api_key_masked:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Api Key Masked
+        enabled:
+          type: boolean
+          title: Enabled
+        is_default:
+          type: boolean
+          title: Is Default
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+        last_tested_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Tested At
+        last_error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Error
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - provider
+      - environment
+      - account_external_id
+      - configured
+      - api_key_masked
+      - enabled
+      - is_default
+      - status
+      - last_tested_at
+      - last_error
+      - created_at
+      - updated_at
+      title: BrokerConnectionSchema
+    BrokerConnectionTestResponse:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+        status:
+          type: string
+          title: Status
+        detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Detail
+      type: object
+      required:
+      - ok
+      - status
+      title: BrokerConnectionTestResponse
+    BrokerConnectionUpdateRequest:
+      properties:
+        account_external_id:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Account External Id
+        api_key:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Api Key
+        api_secret:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Api Secret
+        access_token:
+          anyOf:
+          - type: string
+            maxLength: 1024
+          - type: 'null'
+          title: Access Token
+        enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Enabled
+      type: object
+      title: BrokerConnectionUpdateRequest
+    BrokerEnvironment:
+      type: string
+      enum:
+      - DEMO
+      - LIVE
+      title: BrokerEnvironment
     BrokerOrderListSchema:
       properties:
         items:

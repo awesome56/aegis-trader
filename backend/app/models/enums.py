@@ -166,6 +166,21 @@ class AgentMode(StrEnum):
     PROPOSE = "PROPOSE"
 
 
+class BrokerEnvironment(StrEnum):
+    DEMO = "DEMO"
+    LIVE = "LIVE"
+
+
+class AutoTradeAction(StrEnum):
+    OPEN = "OPEN"
+    ADD = "ADD"
+    HOLD = "HOLD"
+    REDUCE = "REDUCE"
+    CLOSE = "CLOSE"
+    CANCEL_ORDER = "CANCEL_ORDER"
+    REPLACE_ORDER = "REPLACE_ORDER"
+
+
 class BrokerMode(StrEnum):
     PAPER = "PAPER"
     LIVE = "LIVE"

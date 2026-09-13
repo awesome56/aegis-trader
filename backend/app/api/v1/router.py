@@ -9,8 +9,10 @@ from app.api.v1 import (
     agent,
     ai,
     auth,
+    auto_trading,
     backtests,
     broker,
+    broker_connections,
     dashboard,
     health,
     markets,
@@ -42,5 +44,7 @@ api_router.include_router(proposals.router)
 api_router.include_router(backtests.router)
 api_router.include_router(ai.router)
 api_router.include_router(agent.router)
+api_router.include_router(broker_connections.router)
+api_router.include_router(auto_trading.router)
 
 # Phase 7 proposal router is attached in app.api.v1.proposals and included below.

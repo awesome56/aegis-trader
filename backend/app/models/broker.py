@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import MONEY, Base, TimestampMixin, UUIDMixin
-from app.models.enums import BrokerMode
+from app.models.enums import BrokerEnvironment, BrokerMode
 
 
 class BrokerAccount(UUIDMixin, TimestampMixin, Base):
@@ -21,6 +21,11 @@ class BrokerAccount(UUIDMixin, TimestampMixin, Base):
     account_name: Mapped[str] = mapped_column(String(255), nullable=False)
     mode: Mapped[BrokerMode] = mapped_column(
         Enum(BrokerMode, native_enum=False), default=BrokerMode.PAPER, nullable=False
+    )
+    environment: Mapped[BrokerEnvironment] = mapped_column(
+        Enum(BrokerEnvironment, native_enum=False),
+        default=BrokerEnvironment.DEMO,
+        nullable=False,
     )
     external_account_id: Mapped[str | None] = mapped_column(String(255), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

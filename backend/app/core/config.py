@@ -143,6 +143,13 @@ class Settings(BaseSettings):
     MARKET_CRYPTO_PROVIDER: str = "kraken"
     MARKET_FOREX_PROVIDER: str = "twelvedata"
 
+    # --- Autonomous trading (Phase 10) --------------------------------------
+    # Deployment interlock: LIVE autonomous execution is refused unless true.
+    LIVE_TRADING_ALLOWED: bool = False
+    AUTO_TRADING_AGENT_ENABLED: bool = False
+    AUTO_TRADING_AGENT_INTERVAL_SECONDS: int = 300
+    AUTO_TRADING_LIVE_CONFIRM_PHRASE: str = "ENABLE LIVE AUTO TRADING"
+
     # --- Market data: deterministic mock provider ----------------------------
     MOCK_MARKET_SEED: int = 42
     MOCK_MARKET_SYMBOLS: str = "AAPL,MSFT,NVDA,TSLA,AMZN,SPY"

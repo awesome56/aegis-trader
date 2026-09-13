@@ -47,3 +47,12 @@ class BrokerAccountRepository(BaseRepository[BrokerAccount]):
         stmt = select(BrokerAccount).where(BrokerAccount.id == account_id).with_for_update()
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_for_user(self, user_id: uuid.UUID) -> list[BrokerAccount]:
+        stmt = (
+            select(BrokerAccount)
+            .where(BrokerAccount.user_id == user_id)
+            .order_by(BrokerAccount.created_at.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

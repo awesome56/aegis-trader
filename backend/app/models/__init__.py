@@ -7,9 +7,11 @@ imported before metadata is inspected.
 from app.models.agent import AgentDecision, AgentRun
 from app.models.ai import AIProviderConfig
 from app.models.asset import Asset, Watchlist, WatchlistItem
+from app.models.auto_trading import AutoTradingPolicy
 from app.models.backtest import Backtest, BacktestResult
 from app.models.base import Base
 from app.models.broker import BrokerAccount
+from app.models.broker_connection import BrokerConnection
 from app.models.enums import (
     AssetClass,
     BacktestStatus,
@@ -46,11 +48,13 @@ __all__ = [
     "AIProviderConfig",
     "AgentDecision",
     "AgentRun",
+    "AutoTradingPolicy",
     "Backtest",
     "BacktestResult",
     "BacktestStatus",
     "Base",
     "BrokerAccount",
+    "BrokerConnection",
     "BrokerMode",
     "Execution",
     "MarketCandle",

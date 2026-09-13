@@ -23,12 +23,14 @@ function wl(
   return {
     symbol,
     name,
+    provider: 'mock',
     price: price.toFixed(2),
     bid: (price - 0.02).toFixed(2),
     ask: (price + 0.02).toFixed(2),
     previous_close: previous.toFixed(2),
     change: (price - previous).toFixed(2),
     change_pct: changePct.toFixed(2),
+    change_window: 'prev_close',
     day_high: (price * 1.015).toFixed(2),
     day_low: (price * 0.985).toFixed(2),
     volume: volume.toString(),
@@ -37,8 +39,13 @@ function wl(
     confidence: signal ? '0.72' : null,
     strategy,
     quote_time: mockIso(0, 0),
+    last_candle_time: mockIso(0, 0),
+    signal_time: signal ? mockIso(0, 0) : null,
+    signal_expires_at: null,
     age_seconds: 12,
     is_stale: false,
+    market_closed: false,
+    session: 'OPEN',
   }
 }
 

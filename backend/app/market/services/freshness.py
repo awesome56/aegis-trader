@@ -58,14 +58,24 @@ class MarketDataFreshnessService:
         timestamp: datetime,
         max_age_seconds: int,
     ) -> FreshnessAssessment:
+        from app.market.sessions import is_market_open
+        from app.market.validation import detect_asset_class
+
         age = self._age(timestamp)
+        asset_class = detect_asset_class(symbol)
+        market_open = is_market_open(asset_class, self._now())
+        over_age = age > max_age_seconds
+        market_closed = over_age and not market_open
         return FreshnessAssessment(
             kind=kind,
             symbol=symbol,
             market_timestamp=timestamp,
             age_seconds=age,
             max_age_seconds=max_age_seconds,
-            is_stale=age > max_age_seconds,
+            is_stale=over_age and market_open,
+            market_closed=market_closed,
+            session="OPEN" if market_open else "CLOSED",
+            asset_class=asset_class.value,
         )
 
     def is_quote_fresh(self, quote: MarketQuote) -> bool:
@@ -76,10 +86,10 @@ class MarketDataFreshnessService:
 
     def assert_quote_fresh(self, quote: MarketQuote) -> MarketQuote:
         assessment = self.assess_quote(quote)
-        if assessment.is_stale:
+        if assessment.is_stale or assessment.market_closed:
             raise StaleMarketDataError(
-                f"Quote for {quote.symbol} is stale ({assessment.age_seconds:.1f}s old, "
-                f"max {assessment.max_age_seconds}s)",
+                f"Quote for {quote.symbol} is not tradable ({assessment.age_seconds:.1f}s old, "
+                f"market {assessment.session}, max {assessment.max_age_seconds}s)",
                 details={
                     "symbol": quote.symbol,
                     "age_seconds": round(assessment.age_seconds, 3),
@@ -92,7 +102,7 @@ class MarketDataFreshnessService:
 
     def assert_candle_fresh(self, candle: Candle) -> Candle:
         assessment = self.assess_candle(candle)
-        if assessment.is_stale:
+        if assessment.is_stale or assessment.market_closed:
             raise StaleMarketDataError(
                 f"Latest {candle.timeframe.value} candle for {candle.symbol} is stale "
                 f"({assessment.age_seconds:.1f}s old, max {assessment.max_age_seconds}s)",

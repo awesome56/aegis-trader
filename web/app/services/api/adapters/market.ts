@@ -52,12 +52,14 @@ export function toWatchlistItem(raw: RawMarketOverviewItem): WatchlistItem {
   return {
     symbol: raw.symbol,
     name: raw.name,
+    provider: raw.provider,
     price: raw.price ?? null,
     bid: raw.bid ?? null,
     ask: raw.ask ?? null,
     previous_close: raw.previous_close ?? null,
     change: raw.change ?? null,
     change_pct: raw.change_pct ?? null,
+    change_window: raw.change_window ?? null,
     day_high: raw.day_high ?? null,
     day_low: raw.day_low ?? null,
     volume: raw.volume,
@@ -66,8 +68,13 @@ export function toWatchlistItem(raw: RawMarketOverviewItem): WatchlistItem {
     confidence: raw.confidence ?? null,
     strategy: raw.strategy,
     quote_time: raw.quote_time ?? null,
+    last_candle_time: raw.last_candle_time ?? null,
+    signal_time: raw.signal_time ?? null,
+    signal_expires_at: raw.signal_expires_at ?? null,
     age_seconds: raw.age_seconds ?? null,
     is_stale: raw.is_stale,
+    market_closed: raw.market_closed,
+    session: raw.session,
   }
 }
 
@@ -127,12 +134,14 @@ export function toWatchlistSearch(results: RawAssetSearch[]): WatchlistItem[] {
   return results.map((result) => ({
     symbol: result.symbol,
     name: result.name,
+    provider: result.provider,
     price: null,
     bid: null,
     ask: null,
     previous_close: null,
     change: null,
     change_pct: null,
+    change_window: null,
     day_high: null,
     day_low: null,
     volume: null,
@@ -141,8 +150,13 @@ export function toWatchlistSearch(results: RawAssetSearch[]): WatchlistItem[] {
     confidence: null,
     strategy: null,
     quote_time: null,
+    last_candle_time: null,
+    signal_time: null,
+    signal_expires_at: null,
     age_seconds: null,
     is_stale: false,
+    market_closed: false,
+    session: 'OPEN',
   }))
 }
 

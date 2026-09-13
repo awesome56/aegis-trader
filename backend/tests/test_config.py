@@ -62,3 +62,40 @@ def test_production_requires_strong_jwt_secret() -> None:
 def test_cors_origins_parses_json_string() -> None:
     settings = Settings(_env_file=None, CORS_ORIGINS='["https://a.example", "https://b.example"]')
     assert settings.CORS_ORIGINS == ["https://a.example", "https://b.example"]
+
+
+def test_strategy_evaluation_symbols_merge_by_asset_class() -> None:
+    from app.core.config import get_settings
+
+    settings = get_settings().model_copy(
+        update={
+            "STRATEGY_EVALUATION_EQUITY_SYMBOLS": "AAPL,MSFT",
+            "STRATEGY_EVALUATION_CRYPTO_SYMBOLS": "BTC/USD,ETH/USD",
+            "STRATEGY_EVALUATION_FOREX_SYMBOLS": "EUR/USD",
+        }
+    )
+    assert settings.strategy_evaluation_symbols == ["AAPL", "MSFT", "BTC/USD", "ETH/USD", "EUR/USD"]
+
+
+def test_strategy_evaluation_symbols_fall_back_to_worker() -> None:
+    from app.core.config import get_settings
+
+    settings = get_settings().model_copy(
+        update={
+            "STRATEGY_EVALUATION_EQUITY_SYMBOLS": "",
+            "STRATEGY_EVALUATION_CRYPTO_SYMBOLS": "",
+            "STRATEGY_EVALUATION_FOREX_SYMBOLS": "",
+            "WORKER_STRATEGY_SYMBOLS": "AAPL",
+            "MOCK_MARKET_SYMBOLS": "ZZZ",
+        }
+    )
+    assert settings.strategy_evaluation_symbols == ["AAPL"]
+
+
+def test_strategy_evaluation_timeframe_fallback() -> None:
+    from app.core.config import get_settings
+
+    settings = get_settings().model_copy(
+        update={"STRATEGY_EVALUATION_TIMEFRAME": "", "STRATEGY_DEFAULT_TIMEFRAME": "1h"}
+    )
+    assert settings.strategy_evaluation_timeframe == "1h"

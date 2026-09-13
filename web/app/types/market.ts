@@ -61,12 +61,14 @@ export interface IndicatorSet {
 export interface WatchlistItem {
   symbol: string
   name: string | null
+  provider: string
   price: Numeric | null
   bid: Numeric | null
   ask: Numeric | null
   previous_close: Numeric | null
   change: Numeric | null
   change_pct: Numeric | null
+  change_window: string | null
   day_high: Numeric | null
   day_low: Numeric | null
   volume: Numeric | null
@@ -75,8 +77,13 @@ export interface WatchlistItem {
   confidence: Numeric | null
   strategy: string | null
   quote_time: ISODateString | null
+  last_candle_time: ISODateString | null
+  signal_time: ISODateString | null
+  signal_expires_at: ISODateString | null
   age_seconds: number | null
   is_stale: boolean
+  market_closed: boolean
+  session: string
 }
 
 export interface MarketOverview {

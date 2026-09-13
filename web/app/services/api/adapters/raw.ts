@@ -544,12 +544,14 @@ export interface RawMarketStatus {
 export interface RawMarketOverviewItem {
   symbol: string
   name: string | null
+  provider: string
   price: Numeric | null
   bid: Numeric | null
   ask: Numeric | null
   previous_close: Numeric | null
   change: Numeric | null
   change_pct: Numeric | null
+  change_window: string | null
   day_high: Numeric | null
   day_low: Numeric | null
   volume: number | null
@@ -558,8 +560,13 @@ export interface RawMarketOverviewItem {
   confidence: Numeric | null
   market_regime: string | null
   quote_time: string | null
+  last_candle_time: string | null
+  signal_time: string | null
+  signal_expires_at: string | null
   age_seconds: number | null
   is_stale: boolean
+  market_closed: boolean
+  session: string
 }
 
 export interface RawMarketOverview {

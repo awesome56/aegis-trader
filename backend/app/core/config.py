@@ -92,6 +92,13 @@ class Settings(BaseSettings):
     WORKER_STRATEGY_EVALUATION_INTERVAL_SECONDS: int = 60
     WORKER_LOCK_TTL_SECONDS: int = 60
     WORKER_STRATEGY_SYMBOLS: str = ""  # comma-separated; falls back to MOCK_MARKET_SYMBOLS
+    # Asset-class strategy universe (Phase 10B). When any *_SYMBOLS is set it is
+    # used instead of WORKER_STRATEGY_SYMBOLS, enabling real crypto/forex sweeps.
+    STRATEGY_EVALUATION_ENABLED: bool = True
+    STRATEGY_EVALUATION_TIMEFRAME: str = ""  # falls back to STRATEGY_DEFAULT_TIMEFRAME
+    STRATEGY_EVALUATION_EQUITY_SYMBOLS: str = ""
+    STRATEGY_EVALUATION_CRYPTO_SYMBOLS: str = ""
+    STRATEGY_EVALUATION_FOREX_SYMBOLS: str = ""
 
     # --- Backtesting (Phase 8) ----------------------------------------------
     BACKTEST_ENABLED: bool = True
@@ -339,6 +346,28 @@ class Settings(BaseSettings):
             if symbol:
                 seen.setdefault(symbol, None)
         return list(seen)
+
+    @property
+    def strategy_evaluation_symbols(self) -> list[str]:
+        """Merged asset-class strategy universe (equity + crypto + forex)."""
+        sources = [
+            self.STRATEGY_EVALUATION_EQUITY_SYMBOLS,
+            self.STRATEGY_EVALUATION_CRYPTO_SYMBOLS,
+            self.STRATEGY_EVALUATION_FOREX_SYMBOLS,
+        ]
+        if not any(source.strip() for source in sources):
+            return self.worker_strategy_symbols
+        seen: dict[str, None] = {}
+        for source in sources:
+            for raw in source.split(","):
+                symbol = raw.strip().upper()
+                if symbol:
+                    seen.setdefault(symbol, None)
+        return list(seen)
+
+    @property
+    def strategy_evaluation_timeframe(self) -> str:
+        return self.STRATEGY_EVALUATION_TIMEFRAME or self.STRATEGY_DEFAULT_TIMEFRAME
 
     @property
     def sync_database_url(self) -> str:

@@ -119,3 +119,9 @@ class FreshnessAssessment(_DomainModel):
     age_seconds: float
     max_age_seconds: int
     is_stale: bool
+    # True when the asset's market is legitimately closed (e.g. forex weekend);
+    # data may be old but this is not a provider failure. Execution still fails
+    # closed because a live price is required.
+    market_closed: bool = False
+    session: str = "OPEN"
+    asset_class: str | None = None

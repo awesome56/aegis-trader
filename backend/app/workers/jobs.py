@@ -83,29 +83,73 @@ async def evaluate_strategies(ctx: dict[str, Any]) -> dict[str, Any]:
 
 
 async def _run_evaluate_strategies(ctx: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    from app.market.validation import detect_asset_class
+
+    if not settings.STRATEGY_EVALUATION_ENABLED:
+        return {"job": "strategy_evaluation", "skipped": True, "reason": "disabled"}
+
+    timeframe = settings.strategy_evaluation_timeframe
     evaluated = 0
     signals = 0
+    symbols_evaluated: list[str] = []
+    skip_reasons: dict[str, int] = {}
     failed: list[str] = []
+
     async with worker_session() as session:
         market = build_market_service(session)
         service = StrategyService(session, market, settings=settings)
         await service.ensure_bootstrapped()
-        for symbol in settings.worker_strategy_symbols:
+        for symbol in settings.strategy_evaluation_symbols:
+            asset_class = detect_asset_class(symbol)
+            provider = market.routed_provider_name(symbol)
             try:
-                results = await service.evaluate(symbol, persist=True)
+                results = await service.evaluate(symbol, timeframe, persist=True)
             except Exception as exc:  # noqa: BLE001 - one symbol must not stop the sweep
                 failed.append(symbol)
-                logger.warning("worker_symbol_failed", symbol=symbol, error=str(exc))
+                logger.warning(
+                    "worker_symbol_failed",
+                    symbol=symbol,
+                    asset_class=asset_class.value,
+                    provider=provider,
+                    timeframe=timeframe,
+                    error=str(exc),
+                )
                 continue
+            symbol_signals = 0
+            for result in results:
+                if result.signal is not None:
+                    signals += 1
+                    symbol_signals += 1
+                else:
+                    skip_reasons[result.status.value] = skip_reasons.get(result.status.value, 0) + 1
             evaluated += len(results)
-            signals += sum(1 for result in results if result.signal is not None)
+            symbols_evaluated.append(symbol)
+            logger.info(
+                "worker_strategy_symbol",
+                symbol=symbol,
+                asset_class=asset_class.value,
+                provider=provider,
+                timeframe=timeframe,
+                results=len(results),
+                signals=symbol_signals,
+            )
+
     if ctx.get("redis") is not None:
         await write_heartbeat(ctx["redis"], settings)
-    logger.info("worker_job_done", job="strategy_evaluation", evaluated=evaluated, signals=signals)
+    logger.info(
+        "worker_job_done",
+        job="strategy_evaluation",
+        evaluated=evaluated,
+        signals=signals,
+        symbols=len(symbols_evaluated),
+    )
     return {
         "job": "strategy_evaluation",
+        "timeframe": timeframe,
         "evaluated": evaluated,
         "signals": signals,
+        "symbols": symbols_evaluated,
+        "skip_reasons": skip_reasons,
         "failed_symbols": failed,
     }
 

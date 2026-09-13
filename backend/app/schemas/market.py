@@ -149,12 +149,14 @@ class ProviderHealthSchema(_Schema):
 class MarketOverviewItemSchema(_Schema):
     symbol: str
     name: str | None = None
+    provider: str
     price: Decimal | None = None
     bid: Decimal | None = None
     ask: Decimal | None = None
     previous_close: Decimal | None = None
     change: Decimal | None = None
     change_pct: Decimal | None = None
+    change_window: str | None = None
     day_high: Decimal | None = None
     day_low: Decimal | None = None
     volume: int | None = None
@@ -163,8 +165,13 @@ class MarketOverviewItemSchema(_Schema):
     confidence: Decimal | None = None
     market_regime: str | None = None
     quote_time: datetime | None = None
+    last_candle_time: datetime | None = None
+    signal_time: datetime | None = None
+    signal_expires_at: datetime | None = None
     age_seconds: float | None = None
     is_stale: bool = False
+    market_closed: bool = False
+    session: str = "OPEN"
 
 
 class MarketOverviewSchema(_Schema):

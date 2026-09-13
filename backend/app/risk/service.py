@@ -287,7 +287,11 @@ class RiskEngine:
         except Exception as exc:  # noqa: BLE001 - report unavailable, fail closed
             return None, True, str(exc)
         assessment = self._market.freshness.assess_quote(quote)
-        return quote, assessment.is_stale, f"age_seconds={assessment.age_seconds:.1f}"
+        return (
+            quote,
+            assessment.is_stale or assessment.market_closed,
+            f"age_seconds={assessment.age_seconds:.1f} session={assessment.session}",
+        )
 
     async def _publish(self, result: RiskEvaluationResult, blocking: list[RuleResult]) -> None:
         payload = {

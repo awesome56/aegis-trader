@@ -364,8 +364,8 @@ describe('adapters', () => {
       session: 'REGULAR',
       as_of: '2026-01-15T15:00:00+00:00',
       items: [
-        { symbol: 'AAPL', name: 'Apple', price: '190', bid: '189.9', ask: '190.1', previous_close: '188', change: '2', change_pct: '1.2', day_high: '192', day_low: '187', volume: 1000, signal_direction: 'LONG', strategy: 'trend', confidence: '0.8', market_regime: 'BULLISH', quote_time: '2026-01-15T15:00:00+00:00', age_seconds: 5, is_stale: false },
-        { symbol: 'MSFT', name: 'Microsoft', price: '400', bid: null, ask: null, previous_close: null, change: null, change_pct: null, day_high: null, day_low: null, volume: null, signal_direction: null, strategy: null, confidence: null, market_regime: null, quote_time: null, age_seconds: null, is_stale: true },
+        { symbol: 'AAPL', name: 'Apple', provider: 'mock', price: '190', bid: '189.9', ask: '190.1', previous_close: '188', change: '2', change_pct: '1.2', change_window: 'prev_close', day_high: '192', day_low: '187', volume: 1000, signal_direction: 'LONG', strategy: 'trend', confidence: '0.8', market_regime: 'BULLISH', quote_time: '2026-01-15T15:00:00+00:00', last_candle_time: null, signal_time: null, signal_expires_at: null, age_seconds: 5, is_stale: false, market_closed: false, session: 'OPEN' },
+        { symbol: 'MSFT', name: 'Microsoft', provider: 'mock', price: '400', bid: null, ask: null, previous_close: null, change: null, change_pct: null, change_window: null, day_high: null, day_low: null, volume: null, signal_direction: null, strategy: null, confidence: null, market_regime: null, quote_time: null, last_candle_time: null, signal_time: null, signal_expires_at: null, age_seconds: null, is_stale: true, market_closed: false, session: 'OPEN' },
       ],
     })
     expect(overview.items[0]?.signal).toBe('LONG')

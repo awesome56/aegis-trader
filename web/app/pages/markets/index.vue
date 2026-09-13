@@ -141,6 +141,7 @@ function ageText(seconds: number | null): string {
                   <NuxtLink :to="`/markets/${routeSymbol(item.symbol)}`" class="hover:underline">
                     <SymbolBadge :symbol="item.symbol" :name="item.name" size="sm" />
                   </NuxtLink>
+                  <span class="ml-1 text-[10px] text-dimmed">{{ item.provider }}</span>
                 </td>
                 <td class="py-2 text-right"><PriceValue :value="item.price" /></td>
                 <td class="py-2 text-right"><PriceValue :value="item.bid" /></td>
@@ -152,6 +153,7 @@ function ageText(seconds: number | null): string {
                 <td class="py-2 text-right">
                   <PercentageValue v-if="item.change_pct !== null" :value="item.change_pct" show-sign colorize />
                   <span v-else class="text-muted">—</span>
+                  <span v-if="item.change_window" class="ml-1 text-[10px] text-dimmed">{{ item.change_window }}</span>
                 </td>
                 <td class="num py-2 text-right text-muted">{{ rangeText(item.day_low, item.day_high) }}</td>
                 <td class="py-2 text-right"><PriceValue :value="item.previous_close" /></td>
@@ -165,7 +167,8 @@ function ageText(seconds: number | null): string {
                   <span v-else class="text-muted">—</span>
                 </td>
                 <td class="py-2 text-right">
-                  <StatusBadge v-if="item.is_stale" label="STALE" tone="warning" />
+                  <StatusBadge v-if="item.market_closed" label="CLOSED" tone="neutral" />
+                  <StatusBadge v-else-if="item.is_stale" label="STALE" tone="warning" />
                   <span v-else class="num text-muted">{{ ageText(item.age_seconds) }}</span>
                 </td>
               </tr>

@@ -14,6 +14,8 @@ from fastapi import APIRouter, Depends, Query
 from app.auth.dependencies import DbSession, get_current_user
 from app.market.dependencies import IndicatorDep, MarketDataDep
 from app.market.enums import Timeframe
+from app.market.validation import detect_asset_class
+from app.models.enums import AssetClass
 from app.schemas.indicators import IndicatorResponseSchema
 from app.schemas.market import (
     AssetSearchSchema,
@@ -63,10 +65,30 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
         assessment = service.freshness.assess_quote(quote)
         change = None
         change_pct = None
-        if quote.previous_close is not None:
+        change_window = None
+        last_candle_time = None
+        if quote.previous_close is not None and quote.previous_close != 0:
             change = quote.last - quote.previous_close
-            if quote.previous_close != 0:
-                change_pct = change / quote.previous_close * Decimal("100")
+            change_pct = change / quote.previous_close * Decimal("100")
+            change_window = "prev_close"
+        else:
+            # Derive a clearly-labelled change from candles where the provider
+            # does not expose a previous close (e.g. Kraken crypto). Crypto: 24h;
+            # forex: 1d.
+            asset_class = detect_asset_class(symbol)
+            candle_tf, lookback, label = (
+                ("1h", 25, "24h") if asset_class is AssetClass.CRYPTO else ("1d", 2, "1d")
+            )
+            try:
+                candles = await service.get_latest_candles(symbol, candle_tf, lookback)
+                if len(candles) >= lookback and candles[-lookback].close != 0:
+                    comparison = candles[-lookback].close
+                    change = quote.last - comparison
+                    change_pct = change / comparison * Decimal("100")
+                    change_window = label
+                    last_candle_time = candles[-1].close_time or candles[-1].open_time
+            except Exception:  # noqa: BLE001, S110 - enrichment is best-effort
+                pass
         signal = latest.get(symbol)
         strategy = strategies.get(signal.strategy_id) if signal else None
         asset = await service.get_asset(symbol)
@@ -74,12 +96,14 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
             MarketOverviewItemSchema(
                 symbol=symbol,
                 name=asset.name if asset else None,
+                provider=service.routed_provider_name(symbol),
                 price=quote.last,
                 bid=quote.bid,
                 ask=quote.ask,
                 previous_close=quote.previous_close,
                 change=change,
                 change_pct=change_pct,
+                change_window=change_window,
                 day_high=quote.high,
                 day_low=quote.low,
                 volume=quote.volume,
@@ -90,8 +114,13 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
                 if signal and signal.market_regime
                 else None,
                 quote_time=quote.market_timestamp,
+                last_candle_time=last_candle_time,
+                signal_time=signal.signal_time if signal else None,
+                signal_expires_at=signal.expires_at if signal else None,
                 age_seconds=round(assessment.age_seconds, 3),
                 is_stale=assessment.is_stale,
+                market_closed=assessment.market_closed,
+                session=assessment.session,
             )
         )
     status = await service.get_market_status()

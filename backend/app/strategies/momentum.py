@@ -85,6 +85,13 @@ class MomentumStrategy(Strategy):
         min_relative_volume = settings.STRATEGY_MOMENTUM_MIN_RELATIVE_VOLUME
         volume_confirms = relative_volume is not None and relative_volume >= min_relative_volume
 
+        # Momentum requires volume confirmation. Some venues (notably spot FX)
+        # do not publish meaningful volume; never fabricate it or weaken the rule.
+        if not any(volumes):
+            return self._no_signal(
+                context, "volume data unavailable - momentum cannot confirm"
+            )
+
         if rsi_now >= overbought:
             return self._no_signal(context, "RSI overbought - momentum exhausted")
         if rsi_now <= oversold:

@@ -65,6 +65,16 @@ class MarketDataService:
     def provider_name(self) -> str:
         return self._provider.name
 
+    def routed_provider_name(self, symbol: str) -> str:
+        """Provider that serves ``symbol`` (resolves composite routing)."""
+        provider_for = getattr(self._provider, "provider_for", None)
+        if callable(provider_for):
+            try:
+                return provider_for(symbol).name
+            except Exception:  # noqa: BLE001 - fall back to the provider name
+                return self._provider.name
+        return self._provider.name
+
     @property
     def freshness(self) -> MarketDataFreshnessService:
         return self._freshness

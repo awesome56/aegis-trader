@@ -87,3 +87,47 @@ def test_daily_candle_uses_daily_threshold() -> None:
     # One hour old: stale for intraday, fresh for daily.
     candle = _candle(Timeframe.ONE_DAY, FIXED_NOW - timedelta(hours=1))
     assert service.is_candle_fresh(candle) is True
+
+
+def test_forex_weekend_is_market_closed_not_provider_failure() -> None:
+    from datetime import UTC, datetime
+
+    import pytest as _pytest
+
+    from .conftest import make_market_settings
+
+    saturday = datetime(2026, 1, 17, 12, 0, tzinfo=UTC)
+    service = MarketDataFreshnessService(
+        make_market_settings(MAX_QUOTE_AGE_SECONDS=15), clock=lambda: saturday
+    )
+    quote = _quote(saturday - timedelta(hours=6))
+    assessment = service.assess_quote(quote)
+    assert assessment.market_closed is True
+    assert assessment.is_stale is False
+    assert assessment.session == "CLOSED"
+    # Execution still fails closed on a closed market.
+    with _pytest.raises(StaleMarketDataError):
+        service.assert_quote_fresh(_quote(saturday - timedelta(hours=6)))
+
+
+def test_crypto_old_quote_is_stale_any_day() -> None:
+    from datetime import UTC, datetime
+
+    from app.market.domain.models import MarketQuote
+
+    from .conftest import make_market_settings
+
+    saturday = datetime(2026, 1, 17, 12, 0, tzinfo=UTC)
+    service = MarketDataFreshnessService(
+        make_market_settings(MAX_QUOTE_AGE_SECONDS=15), clock=lambda: saturday
+    )
+    quote = MarketQuote(
+        symbol="BTC/USD",
+        last=Decimal("50000"),
+        provider="test",
+        market_timestamp=saturday - timedelta(minutes=5),
+        received_at=saturday,
+    )
+    assessment = service.assess_quote(quote)
+    assert assessment.is_stale is True
+    assert assessment.market_closed is False

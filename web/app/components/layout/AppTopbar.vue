@@ -98,6 +98,7 @@ async function signOut(): Promise<void> {
     <div class="flex-1" />
 
     <!-- Trading mode is always visible -->
+    <AutoTradingBadge />
     <TradingModeBadge />
 
     <div class="hidden items-center gap-2 xl:flex">

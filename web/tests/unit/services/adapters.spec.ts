@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  toAutoTradingStatus,
+  toBrokerConnection,
   toAgentDecisionPage,
   toAgentRunPage,
   toAgentRuntimeStatus,
@@ -648,6 +650,38 @@ describe('adapters', () => {
     expect(decisionPage.items[0]?.action).toBe('BUY')
     expect(decisionPage.items[0]?.evidence?.[0]?.source).toBe('momentum')
     expect(decisionPage.items[0]?.concerns).toEqual(['earnings'])
+  })
+
+  it('maps broker connections and auto-trading status', () => {
+    const connection = toBrokerConnection({
+      id: 'bc-1', provider: 'paper', environment: 'DEMO', account_external_id: null,
+      configured: true, api_key_masked: '••••••9876', enabled: true, is_default: true,
+      status: 'CONNECTED', last_tested_at: null, last_error: null,
+      created_at: '2026-01-15T15:00:00+00:00', updated_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(connection.environment).toBe('DEMO')
+    expect(connection.api_key_masked).toBe('••••••9876')
+
+    const status = toAutoTradingStatus({
+      live_trading_allowed: false, demo_any_enabled: true, live_any_enabled: false,
+      accounts: [{
+        broker_account_id: 'acct-1', provider: 'paper', account_name: 'Paper', environment: 'DEMO',
+        enabled: true, trading_state: 'TRADING_ENABLED',
+        policy: {
+          id: 'p-1', broker_account_id: 'acct-1', environment: 'DEMO', enabled: true,
+          allow_open: true, allow_add: false, allow_reduce: true, allow_close: true,
+          allow_cancel: false, allow_replace: false, allow_manage_manual_positions: false,
+          allow_manage_manual_orders: false, allowed_asset_classes: ['EQUITY'],
+          allowed_symbols: null, max_trade_notional: null, max_position_notional: null,
+          max_trades_per_day: null, cooldown_seconds: 0, min_agent_confidence: null,
+          require_strategy_signal: false, min_strategy_confidence: null, notes: null,
+        },
+      }],
+    })
+    expect(status.demo_any_enabled).toBe(true)
+    expect(status.live_any_enabled).toBe(false)
+    expect(status.accounts[0]?.policy.allow_open).toBe(true)
+    expect(status.accounts[0]?.policy.allow_cancel).toBe(false)
   })
 
   it('assembles dashboard data from multiple sources', () => {

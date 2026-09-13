@@ -438,6 +438,70 @@ export interface RawAgentDecisionPage {
   page_size: number
 }
 
+export interface RawBrokerConnection {
+  id: string
+  provider: string
+  environment: string
+  account_external_id: string | null
+  configured: boolean
+  api_key_masked: string | null
+  enabled: boolean
+  is_default: boolean
+  status: string
+  last_tested_at: string | null
+  last_error: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RawBrokerConnectionTest {
+  ok: boolean
+  status: string
+  detail: string | null
+}
+
+export interface RawAutoTradingPolicy {
+  id: string | null
+  broker_account_id: string | null
+  environment: string
+  enabled: boolean
+  allow_open: boolean
+  allow_add: boolean
+  allow_reduce: boolean
+  allow_close: boolean
+  allow_cancel: boolean
+  allow_replace: boolean
+  allow_manage_manual_positions: boolean
+  allow_manage_manual_orders: boolean
+  allowed_asset_classes: string[] | null
+  allowed_symbols: string[] | null
+  max_trade_notional: Numeric | null
+  max_position_notional: Numeric | null
+  max_trades_per_day: number | null
+  cooldown_seconds: number
+  min_agent_confidence: Numeric | null
+  require_strategy_signal: boolean
+  min_strategy_confidence: Numeric | null
+  notes: string | null
+}
+
+export interface RawAutoTradingAccountStatus {
+  broker_account_id: string
+  provider: string
+  account_name: string
+  environment: string
+  enabled: boolean
+  trading_state: string
+  policy: RawAutoTradingPolicy
+}
+
+export interface RawAutoTradingStatus {
+  live_trading_allowed: boolean
+  demo_any_enabled: boolean
+  live_any_enabled: boolean
+  accounts: RawAutoTradingAccountStatus[]
+}
+
 export interface RawBacktestResult {  backtest_id: string
   engine_version: string | null
   strategy_config: Record<string, unknown> | null

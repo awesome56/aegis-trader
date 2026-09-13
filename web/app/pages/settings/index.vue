@@ -112,6 +112,10 @@ function tone(value: ComponentStatus | undefined): 'success' | 'warning' | 'dang
 
       <AiProvidersSettings />
 
+      <BrokerConnectionsSettings />
+
+      <AutoTradingSettings />
+
       <section class="rounded-lg border border-default bg-elevated/20 p-4">
         <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Manage</h2>
         <div class="mt-3 flex flex-wrap gap-2">

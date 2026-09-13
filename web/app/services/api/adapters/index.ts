@@ -9,6 +9,12 @@ export { toActivityEvent, toActivityPage } from './activity'
 export { toAgentDecisionPage, toAgentDecisionRecord, toAgentRun, toAgentRunPage, toAgentRuntimeStatus } from './agent'
 export { toAiProvider, toProviderCatalog, toProviderTest } from './ai'
 export { toBacktest, toBacktestPage, toBacktestResult } from './backtest'
+export {
+  toAutoTradingPolicy,
+  toAutoTradingStatus,
+  toBrokerConnection,
+  toBrokerConnectionTest,
+} from './tradingControl'
 export { toNotification, toNotificationPage } from './notifications'
 export {
   toOrder, toOrderDetail, toOrderList, toExecution } from './orders'

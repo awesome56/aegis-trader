@@ -40,6 +40,10 @@ export const queryKeys = {
 
   aiProviders: ['ai', 'providers'] as const,
   aiProviderCatalog: ['ai', 'providers', 'supported'] as const,
+
+  brokerConnections: ['brokers', 'connections'] as const,
+  autoTradingStatus: ['auto-trading', 'status'] as const,
+  autoTradingPolicy: (accountId: string) => ['auto-trading', accountId, 'policy'] as const,
   proposalsRoot: ['proposals'] as const,
   proposals: (params: PageParams = {}) => ['proposals', params] as const,
   proposal: (id: string) => ['proposals', id] as const,

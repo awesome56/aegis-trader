@@ -48,3 +48,38 @@ export function useUpdateRiskSettings() {
     },
   })
 }
+
+export function useTradingStatus() {
+  return useQuery({
+    queryKey: queryKeys.riskTrading,
+    queryFn: () => riskService.tradingStatus(),
+    staleTime: 10_000,
+  })
+}
+
+export function useTradingControl() {
+  const queryClient = useQueryClient()
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.riskTrading })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.riskStatus })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
+  }
+
+  const pause = useMutation({
+    mutationFn: (reason?: string) => riskService.pause(reason),
+    onSuccess: invalidate,
+  })
+  const resume = useMutation({ mutationFn: () => riskService.resume(), onSuccess: invalidate })
+  const enable = useMutation({ mutationFn: () => riskService.enable(), onSuccess: invalidate })
+  const disable = useMutation({
+    mutationFn: (reason?: string) => riskService.disable(reason),
+    onSuccess: invalidate,
+  })
+  const emergencyStop = useMutation({
+    mutationFn: (reason: string) => riskService.emergencyStop(reason),
+    onSuccess: invalidate,
+  })
+
+  return { pause, resume, enable, disable, emergencyStop }
+}

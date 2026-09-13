@@ -1,6 +1,12 @@
-import type { PortfolioHistory, PortfolioSnapshot, PortfolioRange, PortfolioSummary } from '~/types/portfolio'
+import type { AllocationBreakdown, AllocationSlice, PortfolioHistory, PortfolioSnapshot, PortfolioRange, PortfolioSummary } from '~/types/portfolio'
 import { iso, num } from './common'
-import type { RawPortfolioHistory, RawPortfolioSummary, RawSnapshotPoint } from './raw'
+import type {
+  RawAllocationBreakdown,
+  RawAllocationSlice,
+  RawPortfolioHistory,
+  RawPortfolioSummary,
+  RawSnapshotPoint,
+} from './raw'
 
 export function toPortfolioSummary(raw: RawPortfolioSummary): PortfolioSummary {
   return {
@@ -41,5 +47,17 @@ export function toPortfolioHistory(raw: RawPortfolioHistory): PortfolioHistory {
     range: raw.range as PortfolioRange,
     currency: 'USD',
     points: raw.points.map(toSnapshotPoint),
+  }
+}
+
+function toAllocationSlice(raw: RawAllocationSlice): AllocationSlice {
+  return { label: raw.label, value: num(raw.value), weight_pct: num(raw.weight_percent) }
+}
+
+export function toAllocationBreakdown(raw: RawAllocationBreakdown): AllocationBreakdown {
+  return {
+    by_asset: raw.by_symbol.map(toAllocationSlice),
+    by_sector: raw.by_sector.map(toAllocationSlice),
+    by_asset_class: raw.by_asset_class.map(toAllocationSlice),
   }
 }

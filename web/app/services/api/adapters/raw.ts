@@ -64,6 +64,20 @@ export interface RawPortfolioHistory {
   points: RawSnapshotPoint[]
 }
 
+export interface RawAllocationSlice {
+  label: string
+  value: Numeric
+  weight_percent: Numeric
+}
+
+export interface RawAllocationBreakdown {
+  total_equity: Numeric
+  cash_weight_percent: Numeric
+  by_symbol: RawAllocationSlice[]
+  by_asset_class: RawAllocationSlice[]
+  by_sector: RawAllocationSlice[]
+}
+
 export interface RawRiskUtilization {
   key: string
   current: Numeric
@@ -71,6 +85,64 @@ export interface RawRiskUtilization {
   utilization_percent: Numeric
   status: string
   unit: string
+}
+
+export interface RawRiskOverview {
+  status: string
+  trading_state: string
+  equity: Numeric
+  cash: Numeric
+  buying_power: Numeric
+  portfolio_exposure_percent: Numeric
+  daily_pnl: Numeric | null
+  daily_loss_limit_percent: Numeric
+  current_drawdown_percent: Numeric
+  max_drawdown_percent: Numeric
+  open_positions: number
+  max_open_positions: number
+  trades_today: number
+  max_trades_per_day: number
+  utilizations: RawRiskUtilization[]
+  updated_at: string
+}
+
+export interface RawRiskSettings {
+  is_enabled: boolean
+  max_position_percent: Numeric
+  max_portfolio_exposure_percent: Numeric
+  max_open_positions: number
+  max_daily_loss_percent: Numeric
+  max_drawdown_percent: Numeric
+  max_trades_per_day: number
+  max_risk_per_trade_percent: Numeric
+  min_strategy_confidence: Numeric
+  min_reward_risk_ratio: Numeric
+  require_stop_loss: boolean
+  require_strategy_signal: boolean
+  max_sector_exposure_percent: Numeric
+  max_asset_class_exposure_percent: Numeric
+  unknown_sector_policy: string
+  daily_loss_include_unrealized: boolean
+  commission_buffer_bps: Numeric
+}
+
+export interface RawRiskEvent {
+  id: string
+  event_type: string
+  severity: string
+  source: string
+  message: string
+  actor: string | null
+  payload: Record<string, unknown> | null
+  occurred_at: string
+}
+
+export interface RawTradingStatus {
+  trading_state: string
+  previous_state: string | null
+  reason: string | null
+  actor: string | null
+  changed_at: string | null
 }
 
 export interface RawSignal {
@@ -173,4 +245,81 @@ export interface RawProposalPage {
   total: number
   limit: number
   offset: number
+}
+
+export interface RawMarketStatus {
+  market: string
+  is_open: boolean
+  session: string
+  opens_at: string | null
+  closes_at: string | null
+  timestamp: string
+  provider: string
+}
+
+export interface RawMarketOverviewItem {
+  symbol: string
+  name: string | null
+  price: Numeric | null
+  change_pct: Numeric | null
+  volume: number | null
+  signal_direction: string | null
+  strategy: string | null
+  confidence: Numeric | null
+  market_regime: string | null
+  quote_time: string | null
+  is_stale: boolean
+}
+
+export interface RawMarketOverview {
+  status: RawMarketStatus
+  items: RawMarketOverviewItem[]
+}
+
+export interface RawAssetSearch {
+  symbol: string
+  name: string | null
+  asset_class: string
+  exchange: string | null
+  currency: string
+  provider: string
+}
+
+export interface RawQuote {
+  symbol: string
+  bid: Numeric | null
+  ask: Numeric | null
+  last: Numeric
+  open: Numeric | null
+  high: Numeric | null
+  low: Numeric | null
+  previous_close: Numeric | null
+  volume: number | null
+  currency: string
+  provider: string
+  market_timestamp: string
+  received_at: string
+  age_seconds: number
+  is_stale: boolean
+}
+
+export interface RawCandle {
+  open_time: string
+  close_time: string | null
+  open: Numeric
+  high: Numeric
+  low: Numeric
+  close: Numeric
+  volume: number | null
+  trade_count: number | null
+  vwap: Numeric | null
+}
+
+export interface RawCandleSeries {
+  symbol: string
+  timeframe: string
+  provider: string
+  candles: RawCandle[]
+  is_stale: boolean | null
+  age_seconds: number | null
 }

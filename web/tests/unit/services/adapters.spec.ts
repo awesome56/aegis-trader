@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  toAllocationBreakdown,
+  toCandleSeries,
   toDashboardData,
+  toMarketOverview,
   toPortfolioSummary,
   toPosition,
   toProposal,
   toProposalPage,
+  toQuote,
+  toRiskLimits,
   toRiskStatus,
   toStrategySignal,
   toTrade,
@@ -190,6 +195,61 @@ describe('adapters', () => {
     expect(page.page).toBe(3)
     expect(page.pageSize).toBe(5)
     expect(page.total).toBe(21)
+  })
+
+  it('maps an allocation breakdown', () => {
+    const breakdown = toAllocationBreakdown({
+      total_equity: '127480',
+      cash_weight_percent: '32.4',
+      by_symbol: [{ label: 'AAPL', value: '12157', weight_percent: '9.5' }],
+      by_sector: [{ label: 'Tech', value: '38000', weight_percent: '29.8' }],
+      by_asset_class: [{ label: 'EQUITY', value: '86000', weight_percent: '67.4' }],
+    })
+    expect(breakdown.by_asset[0]).toEqual({ label: 'AAPL', value: '12157', weight_pct: '9.5' })
+    expect(breakdown.by_sector[0]?.label).toBe('Tech')
+    expect(breakdown.by_asset_class[0]?.weight_pct).toBe('67.4')
+  })
+
+  it('maps a market overview and quote', () => {
+    const overview = toMarketOverview({
+      status: { market: 'US', is_open: true, session: 'REGULAR', opens_at: null, closes_at: null, timestamp: '2026-01-15T15:00:00+00:00', provider: 'mock' },
+      items: [
+        { symbol: 'AAPL', name: 'Apple', price: '190', change_pct: '1.2', volume: 1000, signal_direction: 'LONG', strategy: 'trend', confidence: '0.8', market_regime: 'BULLISH', quote_time: '2026-01-15T15:00:00+00:00', is_stale: false },
+        { symbol: 'MSFT', name: 'Microsoft', price: '400', change_pct: null, volume: null, signal_direction: null, strategy: null, confidence: null, market_regime: null, quote_time: null, is_stale: true },
+      ],
+    })
+    expect(overview.items[0]?.signal).toBe('LONG')
+    expect(overview.items[0]?.market_regime).toBe('BULLISH')
+    expect(overview.regime).toBe('BULLISH')
+
+    const quote = toQuote({
+      symbol: 'AAPL', bid: '189.9', ask: '190.1', last: '190', open: '188', high: '192', low: '187', previous_close: '188', volume: 1000, currency: 'USD', provider: 'mock', market_timestamp: '2026-01-15T15:00:00+00:00', received_at: '2026-01-15T15:00:01+00:00', age_seconds: 1, is_stale: false,
+    })
+    expect(quote.change).toBe('2.00')
+    expect(Number(quote.change_pct)).toBeCloseTo(1.06, 1)
+  })
+
+  it('maps candle series timeframes', () => {
+    const series = toCandleSeries({
+      symbol: 'AAPL',
+      timeframe: '1h',
+      provider: 'mock',
+      candles: [{ open_time: '2026-01-15T14:00:00+00:00', close_time: '2026-01-15T15:00:00+00:00', open: '188', high: '192', low: '187', close: '190', volume: 1000, trade_count: null, vwap: null }],
+      is_stale: false,
+      age_seconds: 1,
+    })
+    expect(series.timeframe).toBe('1H')
+    expect(series.candles[0]?.time).toBe('2026-01-15T15:00:00+00:00')
+  })
+
+  it('maps risk limits from utilizations', () => {
+    const limits = toRiskLimits([
+      { key: 'portfolio_exposure', current: '67.64', limit: '80', utilization_percent: '84.55', status: 'WARNING', unit: 'percent' },
+      { key: 'open_positions', current: '4', limit: '10', utilization_percent: '40', status: 'SAFE', unit: 'count' },
+    ])
+    expect(limits[0]?.label).toBe('Max Portfolio Exposure')
+    expect(limits[0]?.unit).toBe('percent')
+    expect(limits[1]?.unit).toBe('count')
   })
 
   it('assembles dashboard data from multiple sources', () => {

@@ -1,26 +1,38 @@
 <script setup lang="ts">
-import { usePortfolio } from '~/composables/usePortfolio'
+import type { PortfolioRange } from '~/types/portfolio'
+import { useAllocation, usePortfolio, usePortfolioHistory } from '~/composables/usePortfolio'
+import { usePositions } from '~/composables/usePositions'
 import { formatCurrency } from '~/utils/currency'
 import { formatPercentage, formatSignedPercentage } from '~/utils/percentage'
 import { formatPnL } from '~/utils/pnl'
 
 useHead({ title: 'Portfolio' })
 
-const { data, isLoading, isError, refetch } = usePortfolio()
+const summaryQuery = usePortfolio()
+const allocationQuery = useAllocation()
+const positionsQuery = usePositions()
+
+const range = ref<PortfolioRange>('1M')
+const historyQuery = usePortfolioHistory(range)
+
+const RANGES: PortfolioRange[] = ['1D', '1W', '1M', '3M', '6M', 'YTD', '1Y', 'ALL']
+
+const data = computed(() => summaryQuery.data.value ?? null)
+const currency = computed(() => data.value?.currency ?? 'USD')
 
 const metrics = computed(() => {
   const p = data.value
   if (!p) return []
   return [
-    { label: 'Total Equity', value: formatCurrency(p.equity), delta: formatSignedPercentage(p.total_return_pct) },
-    { label: 'Cash', value: formatCurrency(p.cash) },
-    { label: 'Invested', value: formatCurrency(p.invested) },
-    { label: 'Buying Power', value: formatCurrency(p.buying_power) },
-    { label: 'Daily P&L', value: formatPnL(p.daily_pnl, p.currency) },
-    { label: 'Total P&L', value: formatPnL(p.total_pnl, p.currency) },
-    { label: 'Unrealized P&L', value: formatPnL(p.unrealized_pnl, p.currency) },
-    { label: 'Exposure', value: formatPercentage(p.exposure_pct) },
-  ]
+    { label: 'Total Equity', value: formatCurrency(p.equity, { currency: p.currency }), delta: formatSignedPercentage(p.total_return_pct), tone: Number(p.total_return_pct) < 0 ? 'down' : 'up' },
+    { label: 'Cash', value: formatCurrency(p.cash, { currency: p.currency }), delta: null, tone: 'flat' },
+    { label: 'Invested', value: formatCurrency(p.invested, { currency: p.currency }), delta: null, tone: 'flat' },
+    { label: 'Buying Power', value: formatCurrency(p.buying_power, { currency: p.currency }), delta: null, tone: 'flat' },
+    { label: 'Daily P&L', value: formatPnL(p.daily_pnl, p.currency), delta: formatSignedPercentage(p.daily_return_pct), tone: Number(p.daily_pnl) < 0 ? 'down' : 'up' },
+    { label: 'Total P&L', value: formatPnL(p.total_pnl, p.currency), delta: null, tone: 'flat' },
+    { label: 'Unrealized P&L', value: formatPnL(p.unrealized_pnl, p.currency), delta: null, tone: 'flat' },
+    { label: 'Exposure', value: formatPercentage(p.exposure_pct), delta: `${p.open_positions} positions`, tone: 'flat' },
+  ] as { label: string; value: string; delta: string | null; tone: 'up' | 'down' | 'flat' }[]
 })
 </script>
 
@@ -28,41 +40,72 @@ const metrics = computed(() => {
   <div>
     <PageHeader title="Portfolio" subtitle="Holdings, allocation and performance analytics." eyebrow="Analytics">
       <template #actions>
-        <UButton color="neutral" variant="outline" size="sm" icon="i-lucide-refresh-cw" :loading="isLoading" @click="refetch()">
+        <UButton color="neutral" variant="outline" size="sm" icon="i-lucide-refresh-cw" :loading="summaryQuery.isLoading.value" @click="summaryQuery.refetch()">
           Refresh
         </UButton>
       </template>
     </PageHeader>
 
     <ErrorState
-      v-if="isError"
+      v-if="summaryQuery.isError.value"
       title="Portfolio unavailable"
-      message="GET /portfolio is not implemented by the backend yet."
-      @retry="refetch()"
+      message="The backend did not return a portfolio summary. Check the connection and retry."
+      @retry="summaryQuery.refetch()"
     />
 
     <template v-else>
       <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard
-          v-for="(metric, index) in metrics"
-          :key="index"
+          v-for="metric in metrics"
+          :key="metric.label"
           :label="metric.label"
           :value="metric.value"
-          :delta="'delta' in metric ? metric.delta : null"
-          :loading="isLoading"
+          :delta="metric.delta"
+          :delta-tone="metric.tone"
+          :loading="summaryQuery.isLoading.value"
         />
       </section>
 
       <section class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="xl:col-span-2">
-          <FeaturePlaceholder title="Equity curve" phase="Phase 3" icon="i-lucide-chart-line" description="Equity history with drawdown and benchmark." />
+        <div class="rounded-lg border border-default bg-elevated/30 p-4 xl:col-span-2">
+          <div class="mb-2 flex justify-end gap-1">
+            <button
+              v-for="option in RANGES"
+              :key="option"
+              type="button"
+              class="rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors"
+              :class="range === option ? 'bg-elevated text-highlighted' : 'text-muted hover:text-default'"
+              @click="range = option"
+            >
+              {{ option }}
+            </button>
+          </div>
+          <EquityCurve
+            :points="historyQuery.data.value?.points ?? []"
+            :loading="historyQuery.isLoading.value"
+            benchmark
+          />
         </div>
-        <FeaturePlaceholder title="Allocation" phase="Phase 3" icon="i-lucide-donut" description="Asset, sector and asset-class allocation." />
+        <div class="rounded-lg border border-default bg-elevated/30 p-4">
+          <AllocationBars
+            :breakdown="allocationQuery.data.value ?? null"
+            :loading="allocationQuery.isLoading.value"
+            :currency="currency"
+          />
+        </div>
       </section>
 
-      <div class="mt-4">
-        <FeaturePlaceholder title="Positions" phase="Phase 3" icon="i-lucide-table" description="Full positions table with weights and live P&L." />
-      </div>
+      <section class="mt-4 rounded-lg border border-default bg-elevated/30 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-highlighted">Positions</h2>
+          <NuxtLink to="/positions" class="text-xs text-muted hover:text-highlighted">Open positions</NuxtLink>
+        </div>
+        <PositionsTable
+          :positions="positionsQuery.data.value?.items ?? []"
+          :loading="positionsQuery.isLoading.value"
+          :currency="currency"
+        />
+      </section>
     </template>
   </div>
 </template>

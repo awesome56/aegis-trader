@@ -37,6 +37,7 @@ export const queryKeys = {
   riskStatus: ['risk'] as const,
   riskLimits: ['risk', 'limits'] as const,
   riskSettings: ['risk', 'settings'] as const,
+  riskTrading: ['risk', 'trading'] as const,
   riskEvents: (params: PageParams = {}) => ['risk', 'events', params] as const,
 
   strategies: ['strategies'] as const,

@@ -31,9 +31,11 @@ export interface Order {
   symbol: string
   side: OrderSide
   order_type: OrderType
+  time_in_force: string
   status: OrderStatus
   quantity: Numeric
   filled_quantity: Numeric
+  remaining_quantity: Numeric
   limit_price: Numeric | null
   stop_price: Numeric | null
   average_fill_price: Numeric | null

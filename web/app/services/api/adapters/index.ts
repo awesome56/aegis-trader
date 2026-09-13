@@ -5,7 +5,14 @@ export { toDashboardData } from './dashboard'
 export type { DashboardSource } from './dashboard'
 export { toAllocationBreakdown, toPortfolioHistory, toPortfolioSummary, toSnapshotPoint } from './portfolio'
 export { toPosition, toPositionDetail } from './positions'
-export { toProposal, toProposalPage } from './proposals'
+export { toOrder, toOrderDetail, toOrderList, toExecution } from './orders'
+export {
+  toExecutionOutcome,
+  toProposal,
+  toProposalDetail,
+  toProposalPage,
+  toRiskEvaluation,
+} from './proposals'
 export {
   toAssetDetail,
   toAssetSummary,

@@ -65,7 +65,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
           to: '/orders',
         })
         break
-      case WS_EVENTS.orderFailed:
+      case WS_EVENTS.orderRejected:
         push({
           category: 'TRADING',
           severity: 'WARNING',
@@ -92,7 +92,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
           to: '/agent/proposals',
         })
         break
-      case WS_EVENTS.proposalRejected:
+      case WS_EVENTS.proposalRiskRejected:
         push({
           category: 'RISK',
           severity: 'WARNING',

@@ -323,3 +323,104 @@ export interface RawCandleSeries {
   is_stale: boolean | null
   age_seconds: number | null
 }
+
+export interface RawRuleResult {
+  key: string
+  passed: boolean
+  severity: string
+  message: string
+  current: Numeric | null
+  limit: Numeric | null
+  utilization_percent: Numeric | null
+  metadata: Record<string, unknown> | null
+}
+
+export interface RawRiskEvaluation {
+  id: string
+  decision: string
+  symbol: string
+  side: string
+  source: string
+  requested_quantity: Numeric
+  approved_quantity: Numeric | null
+  requested_notional: Numeric
+  approved_notional: Numeric | null
+  entry_price: Numeric | null
+  stop_loss: Numeric | null
+  take_profit: Numeric | null
+  estimated_risk_amount: Numeric | null
+  risk_reward_ratio: Numeric | null
+  portfolio_exposure_before_percent: Numeric
+  portfolio_exposure_after_percent: Numeric | null
+  risk_score: Numeric
+  rules: RawRuleResult[]
+  reasons: string[]
+  warnings: string[]
+  evaluated_at: string
+}
+
+export interface RawExecution {
+  id: string
+  order_id: string
+  quantity: Numeric
+  price: Numeric
+  gross_amount: Numeric | null
+  net_amount: Numeric | null
+  fees: Numeric
+  commission: Numeric
+  slippage: Numeric
+  broker_execution_id: string | null
+  liquidity: string | null
+  executed_at: string
+}
+
+export interface RawBrokerOrder {
+  order_id: string
+  broker_order_id: string | null
+  client_order_id: string | null
+  symbol: string
+  side: string
+  order_type: string
+  time_in_force: string
+  quantity: Numeric
+  filled_quantity: Numeric
+  remaining_quantity: Numeric
+  limit_price: Numeric | null
+  stop_price: Numeric | null
+  average_fill_price: Numeric | null
+  commission: Numeric
+  status: string
+  error_message: string | null
+  created_at: string | null
+  updated_at: string | null
+  submitted_at: string | null
+  filled_at: string | null
+  cancelled_at: string | null
+}
+
+export interface RawBrokerOrderList {
+  items: RawBrokerOrder[]
+  total: number
+}
+
+export interface RawProposalDetail {
+  proposal: RawProposal
+  evaluations: RawRiskEvaluation[]
+  orders: RawBrokerOrder[]
+  executions: RawExecution[]
+}
+
+export interface RawProposalEvaluation {
+  proposal: RawProposal
+  evaluation: RawRiskEvaluation
+}
+
+export interface RawExecutionOutcome {
+  proposal_id: string
+  executed: boolean
+  status: string
+  order_id: string | null
+  final_evaluation_id: string | null
+  final_decision: string | null
+  reason: string | null
+}

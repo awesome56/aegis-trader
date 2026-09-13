@@ -7,7 +7,9 @@ import {
   toPortfolioSummary,
   toPosition,
   toProposal,
+  toProposalDetail,
   toProposalPage,
+  toExecutionOutcome,
   toQuote,
   toRiskLimits,
   toRiskStatus,
@@ -182,9 +184,11 @@ describe('adapters', () => {
   })
 
   it('maps proposal statuses and pagination', () => {
-    expect(toProposal(proposal).status).toBe('APPROVED')
-    expect(toProposal({ ...proposal, status: 'RISK_REJECTED' }).status).toBe('REJECTED')
-    expect(toProposal({ ...proposal, status: 'DRAFT' }).status).toBe('PENDING')
+    expect(toProposal(proposal).status).toBe('RISK_APPROVED')
+    expect(toProposal({ ...proposal, status: 'RISK_REJECTED' }).status).toBe('RISK_REJECTED')
+    expect(toProposal({ ...proposal, status: 'DRAFT' }).status).toBe('DRAFT')
+    expect(toProposal(proposal).source).toBe('MANUAL')
+    expect(toProposal(proposal).proposed_position_percentage).toBe('1.5')
 
     const page = toProposalPage({
       items: [proposal],
@@ -195,6 +199,100 @@ describe('adapters', () => {
     expect(page.page).toBe(3)
     expect(page.pageSize).toBe(5)
     expect(page.total).toBe(21)
+  })
+
+  it('maps proposal detail with evaluations, orders and executions', () => {
+    const detail = toProposalDetail({
+      proposal,
+      evaluations: [
+        {
+          id: 'ev-1',
+          decision: 'APPROVED',
+          symbol: 'AAPL',
+          side: 'BUY',
+          source: 'manual',
+          requested_quantity: '10',
+          approved_quantity: '10',
+          requested_notional: '1900',
+          approved_notional: '1900',
+          entry_price: '190',
+          stop_loss: '180',
+          take_profit: '220',
+          estimated_risk_amount: '100',
+          risk_reward_ratio: '3',
+          portfolio_exposure_before_percent: '10',
+          portfolio_exposure_after_percent: '11',
+          risk_score: '0.2',
+          rules: [
+            { key: 'max_position', passed: true, severity: 'WARNING', message: 'ok', current: '1', limit: '5', utilization_percent: '20', metadata: null },
+          ],
+          reasons: [],
+          warnings: [],
+          evaluated_at: '2026-01-15T15:00:00+00:00',
+        },
+      ],
+      orders: [
+        {
+          order_id: 'o-1',
+          broker_order_id: 'paper-1',
+          client_order_id: 'proposal-pr-1',
+          symbol: 'AAPL',
+          side: 'BUY',
+          order_type: 'MARKET',
+          time_in_force: 'DAY',
+          quantity: '10',
+          filled_quantity: '10',
+          remaining_quantity: '0',
+          limit_price: null,
+          stop_price: null,
+          average_fill_price: '190.10',
+          commission: '1.00',
+          status: 'FILLED',
+          error_message: null,
+          created_at: '2026-01-15T15:00:01+00:00',
+          updated_at: '2026-01-15T15:00:01+00:00',
+          submitted_at: '2026-01-15T15:00:01+00:00',
+          filled_at: '2026-01-15T15:00:01+00:00',
+          cancelled_at: null,
+        },
+      ],
+      executions: [
+        {
+          id: 'x-1',
+          order_id: 'o-1',
+          quantity: '10',
+          price: '190.10',
+          gross_amount: '1901',
+          net_amount: '1900',
+          fees: '1',
+          commission: '1',
+          slippage: '0.1',
+          broker_execution_id: 'be-1',
+          liquidity: 'taker',
+          executed_at: '2026-01-15T15:00:01+00:00',
+        },
+      ],
+    } as never)
+
+    expect(detail.proposal.id).toBe('pr-1')
+    expect(detail.evaluations[0]?.rules[0]?.passed).toBe(true)
+    expect(detail.orders[0]?.remaining_quantity).toBe('0')
+    expect(detail.orders[0]?.fees).toBe('1.00')
+    expect(detail.executions[0]?.broker_execution_id).toBe('be-1')
+  })
+
+  it('maps an execution outcome', () => {
+    const outcome = toExecutionOutcome({
+      proposal_id: 'pr-1',
+      executed: false,
+      status: 'FAILED',
+      order_id: null,
+      final_evaluation_id: 'ev-2',
+      final_decision: 'REJECTED',
+      reason: 'final risk revalidation rejected',
+    })
+    expect(outcome.executed).toBe(false)
+    expect(outcome.final_decision).toBe('REJECTED')
   })
 
   it('maps an allocation breakdown', () => {

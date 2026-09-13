@@ -13,6 +13,7 @@ export const queryKeys = {
   portfolioHistory: (range: PortfolioRange) => ['portfolio', 'history', range] as const,
   allocation: ['portfolio', 'allocation'] as const,
 
+  positionsRoot: ['positions'] as const,
   positions: (params: PageParams = {}) => ['positions', params] as const,
   position: (id: string) => ['positions', id] as const,
 
@@ -25,14 +26,15 @@ export const queryKeys = {
   trades: (params: PageParams = {}) => ['trades', params] as const,
   trade: (id: string) => ['trades', id] as const,
 
+  ordersRoot: ['orders'] as const,
   orders: (params: PageParams = {}) => ['orders', params] as const,
   order: (id: string) => ['orders', id] as const,
 
   agentStatus: ['agent', 'status'] as const,
   decisions: (params: PageParams = {}) => ['agent', 'decisions', params] as const,
+  proposalsRoot: ['proposals'] as const,
   proposals: (params: PageParams = {}) => ['proposals', params] as const,
   proposal: (id: string) => ['proposals', id] as const,
-  pipeline: (id: string) => ['proposals', id, 'pipeline'] as const,
 
   riskStatus: ['risk'] as const,
   riskLimits: ['risk', 'limits'] as const,
@@ -42,12 +44,18 @@ export const queryKeys = {
 
   strategies: ['strategies'] as const,
   strategy: (id: string) => ['strategies', id] as const,
+  strategySignals: (params: PageParams = {}) => ['strategies', 'signals', params] as const,
 
   backtests: (params: PageParams = {}) => ['backtests', params] as const,
   backtest: (id: string) => ['backtests', id] as const,
   backtestResult: (id: string) => ['backtests', id, 'result'] as const,
 
+  activityRoot: ['activity'] as const,
   activity: (params: PageParams = {}) => ['activity', params] as const,
+
+  notificationsRoot: ['notifications'] as const,
+  notifications: (params: PageParams = {}) => ['notifications', params] as const,
+  notificationUnread: ['notifications', 'unread'] as const,
 
   systemStatus: ['system', 'status'] as const,
   health: ['system', 'health'] as const,

@@ -359,13 +359,21 @@ describe('adapters', () => {
   it('maps a market overview and quote', () => {
     const overview = toMarketOverview({
       status: { market: 'US', is_open: true, session: 'REGULAR', opens_at: null, closes_at: null, timestamp: '2026-01-15T15:00:00+00:00', provider: 'mock' },
+      provider: 'mock',
+      is_open: true,
+      session: 'REGULAR',
+      as_of: '2026-01-15T15:00:00+00:00',
       items: [
-        { symbol: 'AAPL', name: 'Apple', price: '190', change_pct: '1.2', volume: 1000, signal_direction: 'LONG', strategy: 'trend', confidence: '0.8', market_regime: 'BULLISH', quote_time: '2026-01-15T15:00:00+00:00', is_stale: false },
-        { symbol: 'MSFT', name: 'Microsoft', price: '400', change_pct: null, volume: null, signal_direction: null, strategy: null, confidence: null, market_regime: null, quote_time: null, is_stale: true },
+        { symbol: 'AAPL', name: 'Apple', price: '190', bid: '189.9', ask: '190.1', previous_close: '188', change: '2', change_pct: '1.2', day_high: '192', day_low: '187', volume: 1000, signal_direction: 'LONG', strategy: 'trend', confidence: '0.8', market_regime: 'BULLISH', quote_time: '2026-01-15T15:00:00+00:00', age_seconds: 5, is_stale: false },
+        { symbol: 'MSFT', name: 'Microsoft', price: '400', bid: null, ask: null, previous_close: null, change: null, change_pct: null, day_high: null, day_low: null, volume: null, signal_direction: null, strategy: null, confidence: null, market_regime: null, quote_time: null, age_seconds: null, is_stale: true },
       ],
     })
     expect(overview.items[0]?.signal).toBe('LONG')
     expect(overview.items[0]?.market_regime).toBe('BULLISH')
+    expect(overview.items[0]?.bid).toBe('189.9')
+    expect(overview.items[0]?.day_high).toBe('192')
+    expect(overview.provider).toBe('mock')
+    expect(overview.is_open).toBe(true)
     expect(overview.regime).toBe('BULLISH')
 
     const quote = toQuote({

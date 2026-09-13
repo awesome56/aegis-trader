@@ -545,18 +545,29 @@ export interface RawMarketOverviewItem {
   symbol: string
   name: string | null
   price: Numeric | null
+  bid: Numeric | null
+  ask: Numeric | null
+  previous_close: Numeric | null
+  change: Numeric | null
   change_pct: Numeric | null
+  day_high: Numeric | null
+  day_low: Numeric | null
   volume: number | null
   signal_direction: string | null
   strategy: string | null
   confidence: Numeric | null
   market_regime: string | null
   quote_time: string | null
+  age_seconds: number | null
   is_stale: boolean
 }
 
 export interface RawMarketOverview {
   status: RawMarketStatus
+  provider: string
+  is_open: boolean
+  session: string
+  as_of: string
   items: RawMarketOverviewItem[]
 }
 

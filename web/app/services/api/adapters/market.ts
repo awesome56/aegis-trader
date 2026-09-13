@@ -53,10 +53,21 @@ export function toWatchlistItem(raw: RawMarketOverviewItem): WatchlistItem {
     symbol: raw.symbol,
     name: raw.name,
     price: raw.price ?? null,
+    bid: raw.bid ?? null,
+    ask: raw.ask ?? null,
+    previous_close: raw.previous_close ?? null,
+    change: raw.change ?? null,
     change_pct: raw.change_pct ?? null,
+    day_high: raw.day_high ?? null,
+    day_low: raw.day_low ?? null,
     volume: raw.volume,
     signal: direction(raw.signal_direction),
     market_regime: regime(raw.market_regime),
+    confidence: raw.confidence ?? null,
+    strategy: raw.strategy,
+    quote_time: raw.quote_time ?? null,
+    age_seconds: raw.age_seconds ?? null,
+    is_stale: raw.is_stale,
   }
 }
 
@@ -64,7 +75,10 @@ export function toMarketOverview(raw: RawMarketOverview): MarketOverview {
   const regimes = raw.items.map((item) => item.market_regime).filter(Boolean)
   return {
     regime: (regimes[0] as MarketRegime | undefined) ?? 'UNKNOWN',
-    as_of: iso(raw.status.timestamp),
+    provider: raw.provider,
+    is_open: raw.is_open,
+    session: raw.session,
+    as_of: iso(raw.as_of ?? raw.status.timestamp),
     items: raw.items.map(toWatchlistItem),
   }
 }
@@ -114,10 +128,21 @@ export function toWatchlistSearch(results: RawAssetSearch[]): WatchlistItem[] {
     symbol: result.symbol,
     name: result.name,
     price: null,
+    bid: null,
+    ask: null,
+    previous_close: null,
+    change: null,
     change_pct: null,
+    day_high: null,
+    day_low: null,
     volume: null,
     signal: null,
     market_regime: null,
+    confidence: null,
+    strategy: null,
+    quote_time: null,
+    age_seconds: null,
+    is_stale: false,
   }))
 }
 

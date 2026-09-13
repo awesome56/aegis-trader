@@ -9,56 +9,56 @@ import type {
 import { mockSignals } from './mockStrategies'
 import { mockIso } from './helpers'
 
+function wl(
+  symbol: string,
+  name: string,
+  price: number,
+  changePct: number,
+  volume: number,
+  signal: WatchlistItem['signal'],
+  regime: WatchlistItem['market_regime'],
+  strategy: string | null = null,
+): WatchlistItem {
+  const previous = price / (1 + changePct / 100)
+  return {
+    symbol,
+    name,
+    price: price.toFixed(2),
+    bid: (price - 0.02).toFixed(2),
+    ask: (price + 0.02).toFixed(2),
+    previous_close: previous.toFixed(2),
+    change: (price - previous).toFixed(2),
+    change_pct: changePct.toFixed(2),
+    day_high: (price * 1.015).toFixed(2),
+    day_low: (price * 0.985).toFixed(2),
+    volume: volume.toString(),
+    signal,
+    market_regime: regime,
+    confidence: signal ? '0.72' : null,
+    strategy,
+    quote_time: mockIso(0, 0),
+    age_seconds: 12,
+    is_stale: false,
+  }
+}
+
 const WATCHLIST: WatchlistItem[] = [
-  {
-    symbol: 'NVDA',
-    name: 'NVIDIA Corporation',
-    price: '126.85',
-    change_pct: '2.14',
-    volume: '41200000',
-    signal: 'LONG',
-    market_regime: 'BULLISH',
-  },
-  {
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    price: '221.05',
-    change_pct: '0.42',
-    volume: '28100000',
-    signal: 'LONG',
-    market_regime: 'BULLISH',
-  },
-  {
-    symbol: 'MSFT',
-    name: 'Microsoft Corporation',
-    price: '410.55',
-    change_pct: '-0.31',
-    volume: '19900000',
-    signal: 'NEUTRAL',
-    market_regime: 'SIDEWAYS',
-  },
-  {
-    symbol: 'TSLA',
-    name: 'Tesla, Inc.',
-    price: '236.40',
-    change_pct: '-1.82',
-    volume: '35600000',
-    signal: 'SHORT',
-    market_regime: 'HIGH_VOLATILITY',
-  },
-  {
-    symbol: 'AMZN',
-    name: 'Amazon.com, Inc.',
-    price: '188.40',
-    change_pct: '1.05',
-    volume: '22700000',
-    signal: 'NEUTRAL',
-    market_regime: 'SIDEWAYS',
-  },
+  wl('NVDA', 'NVIDIA Corporation', 126.85, 2.14, 41_200_000, 'LONG', 'BULLISH', 'momentum'),
+  wl('AAPL', 'Apple Inc.', 221.05, 0.42, 28_100_000, 'LONG', 'BULLISH', 'trend-following'),
+  wl('MSFT', 'Microsoft Corporation', 410.55, -0.31, 19_900_000, 'NEUTRAL', 'SIDEWAYS'),
+  wl('TSLA', 'Tesla, Inc.', 236.4, -1.82, 35_600_000, 'SHORT', 'HIGH_VOLATILITY', 'mean-reversion'),
+  wl('AMZN', 'Amazon.com, Inc.', 188.4, 1.05, 22_700_000, 'NEUTRAL', 'SIDEWAYS'),
 ]
 
 export function mockMarkets(): MarketOverview {
-  return { regime: 'BULLISH', as_of: mockIso(0, 0), items: WATCHLIST.map((item) => ({ ...item })) }
+  return {
+    regime: 'BULLISH',
+    provider: 'mock',
+    is_open: true,
+    session: 'REGULAR',
+    as_of: mockIso(0, 0),
+    items: WATCHLIST.map((item) => ({ ...item })),
+  }
 }
 
 export function mockQuote(symbol: string): Quote {

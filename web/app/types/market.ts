@@ -62,14 +62,28 @@ export interface WatchlistItem {
   symbol: string
   name: string | null
   price: Numeric | null
+  bid: Numeric | null
+  ask: Numeric | null
+  previous_close: Numeric | null
+  change: Numeric | null
   change_pct: Numeric | null
+  day_high: Numeric | null
+  day_low: Numeric | null
   volume: Numeric | null
   signal: SignalDirection | null
   market_regime: MarketRegime | null
+  confidence: Numeric | null
+  strategy: string | null
+  quote_time: ISODateString | null
+  age_seconds: number | null
+  is_stale: boolean
 }
 
 export interface MarketOverview {
   regime: MarketRegime
+  provider: string
+  is_open: boolean
+  session: string
   as_of: ISODateString
   items: WatchlistItem[]
 }

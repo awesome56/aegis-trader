@@ -6,7 +6,7 @@ clients never infer staleness from undocumented thresholds.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -61,11 +61,12 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
         except Exception:  # noqa: BLE001, S112 - skip unavailable symbols
             continue
         assessment = service.freshness.assess_quote(quote)
+        change = None
         change_pct = None
-        if quote.previous_close and quote.previous_close != 0:
-            change_pct = (
-                (quote.last - quote.previous_close) / quote.previous_close * Decimal("100")
-            )
+        if quote.previous_close is not None:
+            change = quote.last - quote.previous_close
+            if quote.previous_close != 0:
+                change_pct = change / quote.previous_close * Decimal("100")
         signal = latest.get(symbol)
         strategy = strategies.get(signal.strategy_id) if signal else None
         asset = await service.get_asset(symbol)
@@ -74,7 +75,13 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
                 symbol=symbol,
                 name=asset.name if asset else None,
                 price=quote.last,
+                bid=quote.bid,
+                ask=quote.ask,
+                previous_close=quote.previous_close,
+                change=change,
                 change_pct=change_pct,
+                day_high=quote.high,
+                day_low=quote.low,
                 volume=quote.volume,
                 signal_direction=signal.direction.value if signal else None,
                 strategy=strategy.slug if strategy else None,
@@ -83,11 +90,17 @@ async def market_overview(service: MarketDataDep, session: DbSession) -> MarketO
                 if signal and signal.market_regime
                 else None,
                 quote_time=quote.market_timestamp,
+                age_seconds=round(assessment.age_seconds, 3),
                 is_stale=assessment.is_stale,
             )
         )
+    status = await service.get_market_status()
     return MarketOverviewSchema(
-        status=MarketStatusSchema.from_domain(await service.get_market_status()),
+        status=MarketStatusSchema.from_domain(status),
+        provider=service.provider_name,
+        is_open=status.is_open,
+        session=status.session.value,
+        as_of=datetime.now(UTC),
         items=items,
     )
 

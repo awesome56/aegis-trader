@@ -9,6 +9,7 @@ import {
   toProposal,
   toProposalDetail,
   toProposalPage,
+  toOrder,
   toExecutionOutcome,
   toQuote,
   toRiskLimits,
@@ -279,6 +280,37 @@ describe('adapters', () => {
     expect(detail.orders[0]?.remaining_quantity).toBe('0')
     expect(detail.orders[0]?.fees).toBe('1.00')
     expect(detail.executions[0]?.broker_execution_id).toBe('be-1')
+  })
+
+  it('maps an order and derives the proposal link from client_order_id', () => {
+    const mapped = toOrder({
+      order_id: 'o-1',
+      broker_order_id: 'paper-1',
+      client_order_id: 'proposal-pr-9',
+      symbol: 'AAPL',
+      side: 'BUY',
+      order_type: 'MARKET',
+      time_in_force: 'DAY',
+      quantity: '10',
+      filled_quantity: '4',
+      remaining_quantity: '6',
+      limit_price: null,
+      stop_price: null,
+      average_fill_price: '190',
+      commission: '1.5',
+      status: 'PARTIALLY_FILLED',
+      error_message: null,
+      created_at: '2026-01-15T15:00:00+00:00',
+      updated_at: '2026-01-15T15:00:00+00:00',
+      submitted_at: '2026-01-15T15:00:00+00:00',
+      filled_at: null,
+      cancelled_at: null,
+    })
+    expect(mapped.id).toBe('o-1')
+    expect(mapped.proposal_id).toBe('pr-9')
+    expect(mapped.remaining_quantity).toBe('6')
+    expect(mapped.fees).toBe('1.5')
+    expect(toOrder({ order_id: 'o-2', client_order_id: 'manual-1' } as never).proposal_id).toBeNull()
   })
 
   it('maps an execution outcome', () => {

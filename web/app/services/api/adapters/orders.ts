@@ -3,10 +3,18 @@ import type { Order, OrderDetail, OrderSide, OrderStatus, OrderType } from '~/ty
 import { iso, isoOrNull, num } from './common'
 import type { RawBrokerOrder, RawBrokerOrderList, RawExecution } from './raw'
 
+const PROPOSAL_PREFIX = 'proposal-'
+
+function proposalIdFromClientOrderId(clientOrderId: string | null): string | null {
+  if (!clientOrderId || !clientOrderId.startsWith(PROPOSAL_PREFIX)) return null
+  const id = clientOrderId.slice(PROPOSAL_PREFIX.length)
+  return id.length ? id : null
+}
+
 export function toOrder(raw: RawBrokerOrder): Order {
   return {
     id: raw.order_id,
-    proposal_id: null,
+    proposal_id: proposalIdFromClientOrderId(raw.client_order_id),
     symbol: raw.symbol,
     side: raw.side as OrderSide,
     order_type: raw.order_type as OrderType,
@@ -42,6 +50,7 @@ export function toOrderList(raw: RawBrokerOrderList): Paginated<Order> {
 export function toExecution(raw: RawExecution) {
   return {
     id: raw.id,
+    order_id: raw.order_id,
     quantity: num(raw.quantity),
     price: num(raw.price),
     fees: num(raw.fees),

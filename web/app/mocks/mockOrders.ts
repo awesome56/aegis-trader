@@ -65,6 +65,7 @@ export function mockOrder(id: string): OrderDetail | null {
       ? [
           {
             id: 'exec-nvda-open',
+            order_id: found.id,
             quantity: found.filled_quantity,
             price: found.average_fill_price ?? '0',
             fees: '0.00',

@@ -15,6 +15,7 @@ export type OrderStatus =
 
 export interface Execution {
   id: string
+  order_id: string
   quantity: Numeric
   price: Numeric
   fees: Numeric

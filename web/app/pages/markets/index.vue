@@ -3,7 +3,7 @@ import type { MarketRegime } from '~/types/market'
 import { useMarkets } from '~/composables/useMarkets'
 import { formatPrice } from '~/utils/currency'
 import { formatDateTime } from '~/utils/dates'
-import { regimeBreakdown, topMovers } from '~/utils/market'
+import { regimeBreakdown, routeSymbol, topMovers } from '~/utils/market'
 
 useHead({ title: 'Markets' })
 
@@ -86,7 +86,7 @@ function ageText(seconds: number | null): string {
           <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Top gainers</h2>
           <ul class="mt-2 space-y-1">
             <li v-for="item in movers.gainers" :key="item.symbol" class="flex items-center justify-between text-xs">
-              <NuxtLink :to="`/markets/${item.symbol}`" class="hover:underline"><SymbolBadge :symbol="item.symbol" size="sm" /></NuxtLink>
+              <NuxtLink :to="`/markets/${routeSymbol(item.symbol)}`" class="hover:underline"><SymbolBadge :symbol="item.symbol" size="sm" /></NuxtLink>
               <span class="flex items-center gap-3">
                 <PriceValue :value="item.price" />
                 <PercentageValue :value="item.change_pct" show-sign colorize />
@@ -98,7 +98,7 @@ function ageText(seconds: number | null): string {
           <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Top losers</h2>
           <ul class="mt-2 space-y-1">
             <li v-for="item in movers.losers" :key="item.symbol" class="flex items-center justify-between text-xs">
-              <NuxtLink :to="`/markets/${item.symbol}`" class="hover:underline"><SymbolBadge :symbol="item.symbol" size="sm" /></NuxtLink>
+              <NuxtLink :to="`/markets/${routeSymbol(item.symbol)}`" class="hover:underline"><SymbolBadge :symbol="item.symbol" size="sm" /></NuxtLink>
               <span class="flex items-center gap-3">
                 <PriceValue :value="item.price" />
                 <PercentageValue :value="item.change_pct" show-sign colorize />
@@ -138,7 +138,7 @@ function ageText(seconds: number | null): string {
             <tbody>
               <tr v-for="item in items" :key="item.symbol" class="border-t border-default hover:bg-elevated/40">
                 <td class="py-2">
-                  <NuxtLink :to="`/markets/${item.symbol}`" class="hover:underline">
+                  <NuxtLink :to="`/markets/${routeSymbol(item.symbol)}`" class="hover:underline">
                     <SymbolBadge :symbol="item.symbol" :name="item.name" size="sm" />
                   </NuxtLink>
                 </td>

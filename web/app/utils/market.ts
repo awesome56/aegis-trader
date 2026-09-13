@@ -28,3 +28,9 @@ export function regimeBreakdown(
     .map(([regime, count]) => ({ regime, count }))
     .sort((a, b) => b.count - a.count)
 }
+
+
+/** URL-safe route form of a symbol: crypto/forex pairs use '-' instead of '/'. */
+export function routeSymbol(symbol: string): string {
+  return symbol.replace('/', '-')
+}

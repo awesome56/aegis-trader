@@ -27,3 +27,11 @@ describe('market helpers', () => {
     ])
   })
 })
+
+describe('routeSymbol', () => {
+  it('uses hyphen for pair symbols', async () => {
+    const mod = await import('~/utils/market')
+    expect(mod.routeSymbol('BTC/USD')).toBe('BTC-USD')
+    expect(mod.routeSymbol('AAPL')).toBe('AAPL')
+  })
+})

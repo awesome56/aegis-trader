@@ -74,6 +74,10 @@ services:
       REDIS_URL: redis://redis:6379/0
       WORKER_ENABLED: "true"
       RUN_MIGRATIONS: "false"
+    # The worker runs ARQ (no HTTP server), so the backend image's HTTP
+    # healthcheck does not apply.
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy

@@ -63,6 +63,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       WORKER_ENABLED: "true"
       RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy

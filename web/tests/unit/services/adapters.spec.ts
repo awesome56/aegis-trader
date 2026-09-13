@@ -23,6 +23,8 @@ import {
   toStrategyDetail,
   toStrategyEvaluation,
   toTrade,
+  toTradePage,
+  toTradeDetail,
 } from '~/services/api/adapters'
 import type {
   RawDashboard,
@@ -499,6 +501,18 @@ describe('adapters', () => {
     })
     expect(page.pageSize).toBe(10)
     expect(page.items[0]?.link).toBe('/agent/proposals/pr-9')
+  })
+
+  it('maps trade pages and detail with open/closed semantics', () => {
+    const openTrade = { ...trade, id: 't-open', closed_at: null, exit_price: null }
+    const page = toTradePage({ items: [trade, openTrade], total: 2, page: 1, page_size: 50 })
+    expect(page.items[0]?.status).toBe('CLOSED')
+    expect(page.items[1]?.status).toBe('OPEN')
+    expect(page.pageSize).toBe(50)
+
+    const detail = toTradeDetail({ ...trade, proposal_id: 'pr-1', order_id: 'o-1' })
+    expect(detail.proposal_id).toBe('pr-1')
+    expect(detail.order_ids).toEqual(['o-1'])
   })
 
   it('normalizes activity source->component and payload->data', () => {

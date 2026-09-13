@@ -90,7 +90,12 @@ class ProposalService:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._proposals = TradeProposalRepository(session)
 
-    async def create(self, payload: ProposalCreate) -> TradeProposal:
+    async def create(
+        self,
+        payload: ProposalCreate,
+        *,
+        source: ProposalSource = ProposalSource.MANUAL,
+    ) -> TradeProposal:
         if payload.idempotency_key is not None:
             existing = await self._proposals.get_by_idempotency_key(payload.idempotency_key)
             if existing is not None:
@@ -134,7 +139,7 @@ class ProposalService:
             asset_class=asset.asset_class or AssetClass.EQUITY,
             action=action,
             order_type=payload.order_type,
-            source=ProposalSource.MANUAL,
+            source=source,
             status=ProposalStatus.DRAFT,
             proposed_quantity=quantity,
             proposed_position_percentage=position_pct,

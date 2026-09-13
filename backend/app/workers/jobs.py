@@ -150,3 +150,20 @@ async def run_backtest(ctx: dict[str, Any], backtest_id: str) -> dict[str, Any]:
         await write_heartbeat(ctx["redis"], settings)
     logger.info("worker_job_done", job="run_backtest", backtest_id=backtest_id, status=status)
     return {"job": "run_backtest", "backtest_id": backtest_id, "status": status}
+
+
+async def run_agent(ctx: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """Execute a queued TradingAnalysisAgent run (analysis / propose only)."""
+    import uuid
+
+    from app.agents.service import AgentService
+
+    settings = _settings(ctx)
+    async with worker_session() as session:
+        run = await AgentService(session, settings).execute(uuid.UUID(run_id))
+        status = run.status.value
+        proposal_id = str(run.proposal_id) if run.proposal_id else None
+    if ctx.get("redis") is not None:
+        await write_heartbeat(ctx["redis"], settings)
+    logger.info("worker_job_done", job="run_agent", run_id=run_id, status=status)
+    return {"job": "run_agent", "run_id": run_id, "status": status, "proposal_id": proposal_id}

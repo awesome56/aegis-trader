@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     activity,
+    agent,
     ai,
     auth,
     backtests,
@@ -40,5 +41,6 @@ api_router.include_router(trades.router)
 api_router.include_router(proposals.router)
 api_router.include_router(backtests.router)
 api_router.include_router(ai.router)
+api_router.include_router(agent.router)
 
 # Phase 7 proposal router is attached in app.api.v1.proposals and included below.

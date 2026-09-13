@@ -2316,6 +2316,183 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agent/status:
+    get:
+      tags:
+      - agent
+      summary: Agent status
+      operationId: agent_status_api_v1_agent_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStatusSchema'
+      security:
+      - HTTPBearer: []
+  /api/v1/agent/runs:
+    get:
+      tags:
+      - agent
+      summary: List agent runs
+      operationId: list_runs_api_v1_agent_runs_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 25
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - agent
+      summary: Create + run an agent analysis
+      operationId: create_run_api_v1_agent_runs_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRunCreateRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agent/runs/{run_id}:
+    get:
+      tags:
+      - agent
+      summary: Agent run detail
+      operationId: get_run_api_v1_agent_runs__run_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRunSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agent/decisions:
+    get:
+      tags:
+      - agent
+      summary: List agent decisions
+      operationId: list_decisions_api_v1_agent_decisions_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 25
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDecisionPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agent/decisions/{decision_id}:
+    get:
+      tags:
+      - agent
+      summary: Agent decision detail
+      operationId: get_decision_api_v1_agent_decisions__decision_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: decision_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Decision Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDecisionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -2407,6 +2584,314 @@ components:
       - page
       - page_size
       title: ActivityPageSchema
+    AgentDecisionPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AgentDecisionSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: AgentDecisionPageSchema
+    AgentDecisionSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        agent_run_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Agent Run Id
+        symbol:
+          type: string
+          title: Symbol
+        action:
+          $ref: '#/components/schemas/OrderAction'
+        confidence:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Confidence
+        reasoning_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reasoning Summary
+        evidence:
+          anyOf:
+          - items:
+              additionalProperties: true
+              type: object
+            type: array
+          - type: 'null'
+          title: Evidence
+        concerns:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Concerns
+        proposal_recommended:
+          type: boolean
+          title: Proposal Recommended
+        market_regime:
+          anyOf:
+          - $ref: '#/components/schemas/MarketRegime'
+          - type: 'null'
+        strategy_signal_ids:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Strategy Signal Ids
+        proposal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proposal Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - agent_run_id
+      - symbol
+      - action
+      - confidence
+      - reasoning_summary
+      - evidence
+      - concerns
+      - proposal_recommended
+      - market_regime
+      - strategy_signal_ids
+      - proposal_id
+      - created_at
+      title: AgentDecisionSchema
+    AgentMode:
+      type: string
+      enum:
+      - ANALYSIS_ONLY
+      - PROPOSE
+      title: AgentMode
+    AgentRunCreateRequest:
+      properties:
+        symbol:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Symbol
+        timeframe:
+          type: string
+          maxLength: 16
+          title: Timeframe
+          default: 1h
+        mode:
+          $ref: '#/components/schemas/AgentMode'
+          default: ANALYSIS_ONLY
+        provider_config_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Provider Config Id
+        prompt:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+          title: Prompt
+      type: object
+      required:
+      - symbol
+      title: AgentRunCreateRequest
+    AgentRunPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AgentRunSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: AgentRunPageSchema
+    AgentRunSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        status:
+          $ref: '#/components/schemas/RunStatus'
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+        mode:
+          $ref: '#/components/schemas/AgentMode'
+        symbols:
+          items:
+            type: string
+          type: array
+          title: Symbols
+        prompt:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Prompt
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+        latency_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Latency Ms
+        tokens_used:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Tokens Used
+        usage:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Usage
+        proposal_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proposal Id
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - status
+      - provider
+      - model
+      - mode
+      - symbols
+      - prompt
+      - error
+      - latency_ms
+      - tokens_used
+      - usage
+      - proposal_id
+      - started_at
+      - completed_at
+      - created_at
+      title: AgentRunSchema
+    AgentStatusSchema:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+        default_mode:
+          type: string
+          title: Default Mode
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+        provider_status:
+          type: string
+          title: Provider Status
+        provider_config_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider Config Id
+        running:
+          type: integer
+          title: Running
+        runs_today:
+          type: integer
+          title: Runs Today
+        recent_failures:
+          type: integer
+          title: Recent Failures
+        last_run:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Last Run
+      type: object
+      required:
+      - enabled
+      - default_mode
+      - provider
+      - model
+      - provider_status
+      - provider_config_id
+      - running
+      - runs_today
+      - recent_failures
+      - last_run
+      title: AgentStatusSchema
     AllocationBreakdown:
       properties:
         total_equity:
@@ -5905,6 +6390,15 @@ components:
       - WARNING
       - BLOCKING
       title: RuleSeverity
+    RunStatus:
+      type: string
+      enum:
+      - PENDING
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
+      title: RunStatus
     SeriesSchema:
       properties:
         period:

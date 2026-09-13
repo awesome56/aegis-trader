@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
 
 import httpx
 
@@ -33,6 +34,12 @@ DEFAULT_BASE_URL = "https://api.openai.com/v1"
 
 
 def _classify(status_code: int, detail: str) -> Exception:
+    lowered = detail.lower()
+    if "model" in lowered and any(
+        phrase in lowered
+        for phrase in ("not supported", "unknown model", "model not found", "does not exist")
+    ):
+        return ProviderModelError("unknown or unsupported model")
     if status_code in (401, 403):
         return ProviderAuthError("provider rejected the credential")
     if status_code == 404:
@@ -47,15 +54,24 @@ def _classify(status_code: int, detail: str) -> Exception:
 class OpenAICompatibleProvider(LLMProvider):
     name = "openai"
 
+    def __init__(self, **kwargs) -> None:  # noqa: ANN003
+        super().__init__(**kwargs)
+        # Some OpenAI-compatible gateways (e.g. opencode.ai) require a session id
+        # header for routing. A stable per-instance value is sufficient.
+        self._session_id = uuid.uuid4().hex
+
     def _url(self, path: str) -> str:
         base = (self._base_url or DEFAULT_BASE_URL).rstrip("/")
         return f"{base}{path}"
 
     def _headers(self) -> dict[str, str]:
-        return {
+        headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
+        if self._base_url and "opencode.ai" in self._base_url:
+            headers["x-opencode-session"] = self._session_id
+        return headers
 
     def _payload(self, request: LLMRequest) -> dict:
         messages: list[dict] = []
@@ -162,10 +178,16 @@ class OpenAICompatibleProvider(LLMProvider):
     async def test_connection(self) -> ProviderTestResult:
         try:
             models = await self.list_models()
-            return ProviderTestResult(ok=True, status="CONNECTED", models=models[:50])
         except ProviderModelError:
             # Endpoint may not expose /models; fall back to a minimal generation.
             response = await self.generate(
                 LLMRequest(messages=[LLMMessage(role="user", content="ping")], max_tokens=1)
             )
             return ProviderTestResult(ok=True, status="CONNECTED", detail=response.model)
+        if models and self._model not in {model.id for model in models}:
+            return ProviderTestResult(
+                ok=False,
+                status="ERROR",
+                detail=f"model {self._model!r} is not offered by this provider",
+            )
+        return ProviderTestResult(ok=True, status="CONNECTED", models=models[:50])

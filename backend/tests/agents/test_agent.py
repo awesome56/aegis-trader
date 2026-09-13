@@ -177,3 +177,32 @@ async def test_tool_loop_limit_raises(db_session) -> None:
         await TradingAnalysisAgent(provider, settings).run(
             context=_context(db_session, user), run_key="run-6"
         )
+
+
+async def test_fenced_json_is_accepted(db_session) -> None:
+    user = await _user(db_session, "agent-fenced@example.com")
+    fenced = "```json\n" + json.dumps(BASIC) + "\n```"
+    provider = FakeLLMProvider(
+        api_key="k", model="m", responses=[LLMResponse(content=fenced, provider="fake", model="m")]
+    )
+    outcome = await TradingAnalysisAgent(provider).run(
+        context=_context(db_session, user), run_key="run-fenced"
+    )
+    assert outcome.result.action.value == "BUY"
+
+
+async def test_invalid_then_repair_completes(db_session) -> None:
+    user = await _user(db_session, "agent-repair@example.com")
+    provider = FakeLLMProvider(
+        api_key="k",
+        model="m",
+        responses=[
+            LLMResponse(content="sorry, here is my analysis...", provider="fake", model="m"),
+            _response(BASIC),
+        ],
+    )
+    outcome = await TradingAnalysisAgent(provider).run(
+        context=_context(db_session, user), run_key="run-repair"
+    )
+    assert outcome.iterations == 2
+    assert outcome.result.action.value == "BUY"

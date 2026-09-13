@@ -15,7 +15,7 @@ from decimal import Decimal
 
 from app.agents.enums import AgentRunMode
 from app.agents.exceptions import AgentLoopLimitError, AgentOutputError
-from app.agents.prompts import SYSTEM_PROMPT, build_user_prompt
+from app.agents.prompts import REPAIR_PROMPT, SYSTEM_PROMPT, build_user_prompt
 from app.agents.tools import AgentToolContext, AgentToolRegistry
 from app.agents.types import AgentOutcome, ToolCallRecord, TradingAnalysisResult
 from app.ai.base import LLMProvider
@@ -75,7 +75,14 @@ class TradingAnalysisAgent:
             usage = _add_usage(usage, response.usage)
 
             if not response.tool_calls:
-                result = _parse_result(response.content, context.symbol, context.mode)
+                try:
+                    result = _parse_result(response.content, context.symbol, context.mode)
+                except AgentOutputError:
+                    if iteration >= max_iterations:
+                        raise
+                    # Give the model exactly one more chance to emit valid JSON.
+                    messages.append(LLMMessage(role="user", content=REPAIR_PROMPT))
+                    continue
                 return AgentOutcome(
                     result=result,
                     tool_calls=tool_records,
@@ -114,20 +121,43 @@ class TradingAnalysisAgent:
         )
 
 
-def _parse_result(content: str, symbol: str, mode: AgentRunMode) -> TradingAnalysisResult:
-    raw = (content or "").strip()
-    if raw.startswith("```"):
-        raw = raw.strip("`")
-        if "\n" in raw:
-            raw = raw.split("\n", 1)[1]
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        raise AgentOutputError("model did not return a structured JSON result")
+def _extract_json_object(content: str) -> dict:
+    text = (content or "").strip()
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        text = text[first_newline + 1 :] if first_newline != -1 else text
+        fence_end = text.rfind("```")
+        if fence_end != -1:
+            text = text[:fence_end]
+    text = text.strip()
     try:
-        data = json.loads(raw[start : end + 1])
-    except json.JSONDecodeError as exc:
-        raise AgentOutputError("model returned invalid JSON") from exc
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+    # Scan for the first balanced JSON object and try candidates.
+    for start in (index for index, char in enumerate(text) if char == "{"):
+        depth = 0
+        for index in range(start, len(text)):
+            char = text[index]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        candidate = json.loads(text[start : index + 1])
+                    except json.JSONDecodeError:
+                        break
+                    if isinstance(candidate, dict):
+                        return candidate
+                    break
+    raise AgentOutputError("model did not return a structured JSON result")
+
+
+def _parse_result(content: str, symbol: str, mode: AgentRunMode) -> TradingAnalysisResult:
+    data = _extract_json_object(content)
     data.setdefault("symbol", symbol)
     try:
         result = TradingAnalysisResult.model_validate(data)

@@ -49,6 +49,13 @@ Return ONLY a single JSON object with this shape (no markdown, no prose):
 """
 
 
+REPAIR_PROMPT = (
+    "Your previous response was not valid JSON matching the required schema. "
+    "Reply with ONLY a single JSON object (no markdown, no prose, no code fences) "
+    "using the exact keys specified in the system prompt."
+)
+
+
 def build_user_prompt(
     *,
     symbol: str,

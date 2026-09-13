@@ -14,6 +14,9 @@ import {
   toQuote,
   toRiskLimits,
   toRiskStatus,
+  toActivityPage,
+  toNotification,
+  toNotificationPage,
   toStrategySignal,
   toStrategySignalPage,
   toStrategy,
@@ -458,6 +461,72 @@ describe('adapters', () => {
       signal: null,
     })
     expect(noSignal.signal).toBeNull()
+  })
+
+  it('maps notifications and derives structured resource links', () => {
+    const withProposal = toNotification({
+      id: 'n-1',
+      category: 'RISK',
+      severity: 'WARNING',
+      title: 'Proposal rejected',
+      message: 'Exposure limit',
+      is_read: false,
+      read_at: null,
+      payload: { proposal_id: 'pr-9' },
+      created_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(withProposal.link).toBe('/agent/proposals/pr-9')
+    expect(withProposal.is_read).toBe(false)
+
+    const noLink = toNotification({
+      id: 'n-2',
+      category: 'SYSTEM',
+      severity: 'INFO',
+      title: 'Info',
+      message: 'No resource',
+      is_read: true,
+      read_at: '2026-01-15T15:01:00+00:00',
+      payload: { note: 'x' },
+      created_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(noLink.link).toBeUndefined()
+
+    const page = toNotificationPage({
+      items: [withProposal],
+      total: 3,
+      page: 1,
+      page_size: 10,
+    })
+    expect(page.pageSize).toBe(10)
+    expect(page.items[0]?.link).toBe('/agent/proposals/pr-9')
+  })
+
+  it('normalizes activity source->component and payload->data', () => {
+    const page = toActivityPage({
+      items: [
+        {
+          id: 'a-1',
+          event_type: 'proposal.executed',
+          severity: 'INFO',
+          source: 'risk',
+          message: 'Proposal executed',
+          actor: 'owner',
+          correlation_id: 'corr-1',
+          payload: { proposal_id: 'pr-1', symbol: 'AAPL' },
+          occurred_at: '2026-01-15T15:00:00+00:00',
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 50,
+    })
+    const event = page.items[0]!
+    expect(event.component).toBe('risk')
+    expect(event.data).toEqual({ proposal_id: 'pr-1', symbol: 'AAPL' })
+    expect(event.symbol).toBe('AAPL')
+    expect(event.link).toBe('/agent/proposals/pr-1')
+    expect(event.actor).toBe('owner')
+    expect(page.pageSize).toBe(50)
   })
 
   it('assembles dashboard data from multiple sources', () => {

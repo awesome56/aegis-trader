@@ -85,7 +85,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         break
       case WS_EVENTS.proposalCreated:
         push({
-          category: 'AGENT',
+          category: 'TRADING',
           severity: 'INFO',
           title: 'New trade proposal',
           message: `${label} proposal generated`.trim(),
@@ -137,6 +137,23 @@ export const useNotificationsStore = defineStore('notifications', () => {
           to: '/settings',
         })
         break
+      case WS_EVENTS.notificationCreated: {
+        const data = event.data as Record<string, unknown>
+        const severity = String(data.severity ?? 'INFO')
+        if (severity === 'INFO') break
+        const category = String(data.category ?? 'SYSTEM')
+        const allowed: NotificationCategory[] = ['TRADING', 'RISK', 'SYSTEM', 'BROKER', 'MARKET', 'PORTFOLIO']
+        push({
+          category: allowed.includes(category as NotificationCategory)
+            ? (category as NotificationCategory)
+            : 'SYSTEM',
+          severity: severity === 'CRITICAL' ? 'CRITICAL' : 'WARNING',
+          title: String(data.title ?? 'Notification'),
+          message: String(data.message ?? ''),
+          to: '/activity',
+        })
+        break
+      }
       default:
         break
     }

@@ -3,7 +3,6 @@ import { onClickOutside } from '@vueuse/core'
 import { useAppStore } from '~/stores/app'
 import { useAuth } from '~/composables/useAuth'
 import { useTheme } from '~/composables/useTheme'
-import { useNotifications } from '~/composables/useNotifications'
 import { useSystemStatus } from '~/composables/useSystemStatus'
 import type { ComponentStatus } from '~/types/system'
 
@@ -11,7 +10,6 @@ const app = useAppStore()
 const router = useRouter()
 const { user, logout } = useAuth()
 const { preference, cycle } = useTheme()
-const { unreadCount } = useNotifications()
 const { statusQuery, healthQuery } = useSystemStatus()
 
 const status = computed(() => statusQuery.data.value)
@@ -123,23 +121,7 @@ async function signOut(): Promise<void> {
     <ConnectionStatus />
 
     <!-- Notifications -->
-    <UButton
-      color="neutral"
-      variant="ghost"
-      size="sm"
-      icon="i-lucide-bell"
-      :aria-label="`Notifications (${unreadCount} unread)`"
-      @click="router.push('/activity')"
-    >
-      <template #trailing>
-        <span
-          v-if="unreadCount > 0"
-          class="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-inverted"
-        >
-          {{ unreadCount > 99 ? '99+' : unreadCount }}
-        </span>
-      </template>
-    </UButton>
+    <NotificationBell />
 
     <!-- Theme -->
     <UButton

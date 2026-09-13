@@ -219,6 +219,48 @@ export interface RawStrategyEvaluation {
   signal: RawSignalEvidence | null
 }
 
+export interface RawNotification {
+  id: string
+  category: string
+  severity: string
+  title: string
+  message: string
+  is_read: boolean
+  read_at: string | null
+  payload: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface RawNotificationPage {
+  items: RawNotification[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface RawUnreadCount {
+  unread: number
+}
+
+export interface RawActivityEvent {
+  id: string
+  event_type: string
+  severity: string
+  source: string
+  message: string
+  actor: string | null
+  correlation_id: string | null
+  payload: Record<string, unknown> | null
+  occurred_at: string
+}
+
+export interface RawActivityPage {
+  items: RawActivityEvent[]
+  total: number
+  page: number
+  page_size: number
+}
+
 export interface RawDashboard {
   portfolio: RawPortfolioSummary
   trading_mode: string

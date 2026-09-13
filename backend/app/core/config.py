@@ -122,6 +122,15 @@ class Settings(BaseSettings):
     MAX_DAILY_CANDLE_AGE_SECONDS: int = 86400
     MARKET_MAX_CANDLE_LIMIT: int = 1000
     MARKET_DEFAULT_CURRENCY: str = "USD"
+    # Active symbol universe for real providers (falls back to the mock list).
+    MARKET_SYMBOLS: str = ""
+    MARKET_HTTP_TIMEOUT_SECONDS: float = 15.0
+
+    # Twelve Data (equities + forex + crypto)
+    TWELVE_DATA_API_KEY: str = ""
+    TWELVE_DATA_BASE_URL: str = "https://api.twelvedata.com"
+    # Kraken public market data (crypto, keyless)
+    KRAKEN_BASE_URL: str = "https://api.kraken.com"
 
     # --- Market data: deterministic mock provider ----------------------------
     MOCK_MARKET_SEED: int = 42
@@ -307,9 +316,10 @@ class Settings(BaseSettings):
 
     @property
     def market_symbols(self) -> list[str]:
-        """Configured mock/generic symbol universe, normalised and de-duplicated."""
+        """Active symbol universe (``MARKET_SYMBOLS`` else the mock list)."""
+        source = self.MARKET_SYMBOLS or self.MOCK_MARKET_SYMBOLS
         seen: dict[str, None] = {}
-        for raw in self.MOCK_MARKET_SYMBOLS.split(","):
+        for raw in source.split(","):
             symbol = raw.strip().upper()
             if symbol:
                 seen.setdefault(symbol, None)

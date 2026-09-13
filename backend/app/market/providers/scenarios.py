@@ -42,13 +42,13 @@ _ENVELOPE: dict[str, float] = {
 
 
 def is_scenario(value: str | None) -> bool:
-    return bool(value) and value.strip().lower() in SCENARIOS
+    return bool(value) and str(value).strip().lower() in SCENARIOS
 
 
 def normalise_scenario(value: str | None) -> str | None:
     if not is_scenario(value):
         return None
-    return (value or "").strip().lower()
+    return str(value).strip().lower()
 
 
 def envelope(scenario: str) -> float:

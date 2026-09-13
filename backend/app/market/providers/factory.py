@@ -10,11 +10,15 @@ from app.core.config import Settings, get_settings
 from app.market.exceptions import ProviderUnavailableError
 from app.market.providers.base import MarketDataProvider
 from app.market.providers.csv import CsvMarketDataProvider
+from app.market.providers.kraken import KrakenProvider
 from app.market.providers.mock import MockMarketDataProvider
+from app.market.providers.twelve_data import TwelveDataProvider
 
 _PROVIDER_FACTORIES: dict[str, Callable[[Settings], MarketDataProvider]] = {
     MockMarketDataProvider.name: MockMarketDataProvider,
     CsvMarketDataProvider.name: CsvMarketDataProvider,
+    TwelveDataProvider.name: TwelveDataProvider,
+    KrakenProvider.name: KrakenProvider,
 }
 
 _providers: dict[str, MarketDataProvider] = {}

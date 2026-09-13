@@ -33,6 +33,42 @@ def normalize_symbol(symbol: str) -> str:
     return normalized
 
 
+_FIAT = {"USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "CNH", "MXN", "ZAR", "NGN"}
+_CRYPTO_QUOTES = {"USDT", "USDC", "BUSD", "BTC", "ETH"}
+
+
+def detect_asset_class(symbol: str):  # noqa: ANN201
+    """Classify a symbol as EQUITY / FOREX / CRYPTO / ETF (best-effort)."""
+    from app.models.enums import AssetClass
+
+    normalized = normalize_symbol(symbol)
+    if "/" in normalized or "-" in normalized:
+        base, _, quote = normalized.replace("-", "/").partition("/")
+        if quote in _CRYPTO_QUOTES or base in {"BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "XBT"}:
+            return AssetClass.CRYPTO
+        if base in _FIAT and quote in _FIAT:
+            return AssetClass.FOREX
+        return AssetClass.CRYPTO
+    if normalized in {"SPY", "QQQ", "IWM", "DIA", "VOO", "VTI", "GLD", "SLV"}:
+        return AssetClass.ETF
+    return AssetClass.EQUITY
+
+
+def external_symbol(symbol: str, provider: str) -> str:
+    """Map an internal symbol to a provider's wire format."""
+    normalized = normalize_symbol(symbol)
+    provider = provider.lower()
+    if provider == "kraken":
+        base, _, quote = normalized.replace("-", "/").partition("/")
+        if not quote:
+            return normalized
+        base = "XBT" if base == "BTC" else base
+        return f"{base}{quote}"
+    if provider == "twelvedata":
+        return normalized.replace("-", "/")
+    return normalized
+
+
 def validate_quote(quote: MarketQuote) -> MarketQuote:
     """Reject impossible quotes. Returns the quote for convenient chaining."""
     if quote.last <= 0:

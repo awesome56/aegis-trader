@@ -35,7 +35,7 @@ describe('mock fixtures', () => {
   })
 
   it('returns strategies and risk limits', () => {
-    expect(mockStrategies().map((s) => s.slug)).toContain('trend-following')
+    expect(mockStrategies().map((s) => s.key)).toContain('trend-following')
     expect(mockRiskLimits().length).toBeGreaterThan(0)
   })
 })

@@ -1,7 +1,6 @@
 import type { ISODateString, Numeric } from './api'
 import type { MarketRegime } from './market'
 import type { Execution, Order, OrderSide, OrderType } from './order'
-import type { StrategySignal } from './strategy'
 
 export type OrderAction = 'BUY' | 'SELL' | 'HOLD' | 'CLOSE' | 'REDUCE'
 
@@ -162,8 +161,4 @@ export interface ProposalCreateInput {
   confidence?: string
   reasoning_summary?: string | null
   idempotency_key?: string
-}
-
-export interface ProposalSignalEvidence {
-  signal: StrategySignal
 }

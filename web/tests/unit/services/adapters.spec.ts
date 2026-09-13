@@ -15,6 +15,10 @@ import {
   toRiskLimits,
   toRiskStatus,
   toStrategySignal,
+  toStrategySignalPage,
+  toStrategy,
+  toStrategyDetail,
+  toStrategyEvaluation,
   toTrade,
 } from '~/services/api/adapters'
 import type {
@@ -380,6 +384,80 @@ describe('adapters', () => {
     expect(limits[0]?.label).toBe('Max Portfolio Exposure')
     expect(limits[0]?.unit).toBe('percent')
     expect(limits[1]?.unit).toBe('count')
+  })
+
+  it('maps strategies, signal pages and evaluations', () => {
+    const rawStrategy = {
+      id: 'strat-1',
+      key: 'trend-following',
+      name: 'Trend Following',
+      description: 'desc',
+      strategy_type: 'TREND_FOLLOWING',
+      is_enabled: true,
+      timeframe: '1d',
+      priority: 10,
+      parameters: { fast_period: 20 },
+      asset_classes: ['EQUITY'],
+      signal_count: 5,
+      last_signal_at: '2026-01-15T15:00:00+00:00',
+      created_at: '2026-01-01T00:00:00+00:00',
+      updated_at: '2026-01-15T15:00:00+00:00',
+    }
+    const strategy = toStrategy(rawStrategy)
+    expect(strategy.key).toBe('trend-following')
+    expect(strategy.strategy_type).toBe('TREND_FOLLOWING')
+    expect(strategy.signal_count).toBe(5)
+
+    const detail = toStrategyDetail({ ...rawStrategy, recent_signals: [signal] })
+    expect(detail.recent_signals[0]?.id).toBe('sig-1')
+
+    const page = toStrategySignalPage({
+      items: [signal],
+      total: 12,
+      page: 2,
+      page_size: 5,
+    })
+    expect(page.page).toBe(2)
+    expect(page.pageSize).toBe(5)
+    expect(page.items[0]?.direction).toBe('LONG')
+
+    const evaluation = toStrategyEvaluation({
+      strategy_key: 'momentum',
+      strategy_name: 'Momentum',
+      symbol: 'AAPL',
+      timeframe: '1d',
+      status: 'SIGNAL',
+      reason: 'signal generated',
+      signal: {
+        strategy_key: 'momentum',
+        strategy_name: 'Momentum',
+        symbol: 'AAPL',
+        direction: 'LONG',
+        strength: '0.8',
+        confidence: '0.9',
+        price: '190',
+        timeframe: '1d',
+        time_horizon: 'SWING',
+        market_regime: 'BULLISH',
+        indicators: { rsi: '61.4' },
+        generated_at: '2026-01-15T15:00:00+00:00',
+        data_timestamp: '2026-01-15T14:00:00+00:00',
+        expires_at: '2026-01-16T15:00:00+00:00',
+      },
+    })
+    expect(evaluation.status).toBe('SIGNAL')
+    expect(evaluation.signal?.direction).toBe('LONG')
+
+    const noSignal = toStrategyEvaluation({
+      strategy_key: 'momentum',
+      strategy_name: 'Momentum',
+      symbol: 'AAPL',
+      timeframe: '1d',
+      status: 'NO_SIGNAL',
+      reason: 'no signal',
+      signal: null,
+    })
+    expect(noSignal.signal).toBeNull()
   })
 
   it('assembles dashboard data from multiple sources', () => {

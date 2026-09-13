@@ -31,5 +31,11 @@ export {
   toRiskStatusFromOverview,
 } from './risk'
 export type { RiskStatusInput } from './risk'
-export { toStrategySignal } from './strategy'
+export {
+  toStrategy,
+  toStrategyDetail,
+  toStrategyEvaluation,
+  toStrategySignal,
+  toStrategySignalPage,
+} from './strategy'
 export { toTrade, toTradeDetail, toTradePage } from './trades'

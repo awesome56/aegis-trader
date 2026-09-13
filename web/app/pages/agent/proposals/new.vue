@@ -5,8 +5,20 @@ import { useCreateProposal } from '~/composables/useProposals'
 useHead({ title: 'New Proposal' })
 
 const router = useRouter()
+const route = useRoute()
 const createProposal = useCreateProposal()
 const errorMessage = ref<string | null>(null)
+
+const initial = computed<Partial<ProposalCreateInput>>(() => {
+  const query = route.query
+  const rawSide = typeof query.side === 'string' ? query.side.toUpperCase() : ''
+  return {
+    symbol: typeof query.symbol === 'string' ? query.symbol.toUpperCase() : undefined,
+    side: rawSide === 'BUY' || rawSide === 'SELL' ? rawSide : undefined,
+    strategy_signal_id: typeof query.signal === 'string' ? query.signal : undefined,
+    confidence: typeof query.confidence === 'string' ? query.confidence : undefined,
+  }
+})
 
 async function onSubmit(input: ProposalCreateInput): Promise<void> {
   errorMessage.value = null
@@ -38,7 +50,7 @@ async function onSubmit(input: ProposalCreateInput): Promise<void> {
     </div>
 
     <div class="max-w-2xl rounded-lg border border-default bg-elevated/30 p-4">
-      <ProposalForm :submitting="createProposal.isPending.value" @submit="onSubmit" />
+      <ProposalForm :initial="initial" :submitting="createProposal.isPending.value" @submit="onSubmit" />
     </div>
   </div>
 </template>

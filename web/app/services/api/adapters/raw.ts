@@ -164,6 +164,61 @@ export interface RawSignal {
   expires_at: string | null
 }
 
+export interface RawStrategy {
+  id: string
+  key: string
+  name: string
+  description: string | null
+  strategy_type: string
+  is_enabled: boolean
+  timeframe: string
+  priority: number
+  parameters: Record<string, unknown> | null
+  asset_classes: string[] | null
+  signal_count: number
+  last_signal_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RawStrategyDetail extends RawStrategy {
+  recent_signals: RawSignal[]
+}
+
+export interface RawSignalPage {
+  items: RawSignal[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface RawSignalEvidence {
+  strategy_key: string
+  strategy_name: string
+  symbol: string
+  direction: string
+  strength: Numeric
+  confidence: Numeric
+  price: Numeric | null
+  timeframe: string
+  time_horizon: string
+  market_regime: string
+  indicators: Record<string, Numeric>
+  generated_at: string
+  data_timestamp: string
+  expires_at: string
+}
+
+export interface RawStrategyEvaluation {
+  strategy_key: string
+  strategy_name: string
+  symbol: string
+  timeframe: string
+  status: string
+  reason: string
+  signal: RawSignalEvidence | null
+}
+
 export interface RawDashboard {
   portfolio: RawPortfolioSummary
   trading_mode: string

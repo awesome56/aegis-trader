@@ -1,23 +1,47 @@
-import type { MessageResponse } from '~/types/api'
-import type { Strategy, StrategyDetail } from '~/types/strategy'
-import { isMockEnabled } from './config'
+import type { PageParams } from '~/types/api'
+import type {
+  Strategy,
+  StrategyDetail,
+  StrategyEvaluation,
+  StrategySignalPage,
+} from '~/types/strategy'
 import { api } from './client'
-import { mockStrategies, mockStrategy } from '~/mocks'
+import { isMockEnabled } from './config'
+import {
+  toStrategy,
+  toStrategyDetail,
+  toStrategyEvaluation,
+  toStrategySignalPage,
+} from './adapters'
+import type {
+  RawSignalPage,
+  RawStrategy,
+  RawStrategyDetail,
+  RawStrategyEvaluation,
+} from './adapters/raw'
+import { mockStrategies, mockStrategy, mockSignals } from '~/mocks'
 
-/**
- * BACKEND REQUIREMENT (not yet implemented):
- *   GET /strategies
- *   GET /strategies/{id}
- *   POST /strategies/{id}/enable
- *   POST /strategies/{id}/disable
- *
- * Enable/disable changes automated trading behaviour and must always be
- * confirmed in the UI (see ConfirmationDialog).
- */
+export interface EvaluateStrategyInput {
+  symbol: string
+  timeframe?: string
+  strategy_ids?: string[]
+}
+
+function signalQuery(params: PageParams): Record<string, unknown> {
+  const pageSize = Number(params.pageSize ?? params.limit ?? 50)
+  const page = Number(params.page ?? 1)
+  const query: Record<string, unknown> = { page, page_size: pageSize }
+  for (const key of ['strategy_id', 'symbol', 'timeframe', 'direction', 'start', 'end']) {
+    const value = params[key]
+    if (value !== undefined && value !== '') query[key] = value
+  }
+  return query
+}
+
 export const strategiesService = {
   list: async (): Promise<Strategy[]> => {
     if (isMockEnabled()) return mockStrategies()
-    return api.get<Strategy[]>('/strategies')
+    return (await api.get<RawStrategy[]>('/strategies')).map(toStrategy)
   },
   get: async (id: string): Promise<StrategyDetail> => {
     if (isMockEnabled()) {
@@ -25,12 +49,42 @@ export const strategiesService = {
       if (!detail) throw new Error(`Strategy ${id} not found (mock)`)
       return detail
     }
-    return api.get<StrategyDetail>(`/strategies/${id}`)
+    return toStrategyDetail(await api.get<RawStrategyDetail>(`/strategies/${id}`))
   },
-  setEnabled: async (id: string, enabled: boolean): Promise<MessageResponse> => {
+  signals: async (params: PageParams = {}): Promise<StrategySignalPage> => {
     if (isMockEnabled()) {
-      return { detail: enabled ? 'Strategy enabled' : 'Strategy disabled' }
+      const items = mockSignals()
+      return { items, total: items.length, page: 1, pageSize: items.length || 1 }
     }
-    return api.post<MessageResponse>(`/strategies/${id}/${enabled ? 'enable' : 'disable'}`)
+    return toStrategySignalPage(
+      await api.get<RawSignalPage>('/strategies/signals', { query: signalQuery(params) }),
+    )
+  },
+  strategySignals: async (id: string, params: PageParams = {}): Promise<StrategySignalPage> => {
+    if (isMockEnabled()) {
+      const items = mockSignals().filter((signal) => signal.strategy_id === id)
+      return { items, total: items.length, page: 1, pageSize: items.length || 1 }
+    }
+    return toStrategySignalPage(
+      await api.get<RawSignalPage>(`/strategies/${id}/signals`, { query: signalQuery(params) }),
+    )
+  },
+  enable: async (id: string): Promise<Strategy> => {
+    if (isMockEnabled()) throw new Error('Strategy enable is unavailable in mock mode')
+    return toStrategy(await api.post<RawStrategy>(`/strategies/${id}/enable`))
+  },
+  disable: async (id: string): Promise<Strategy> => {
+    if (isMockEnabled()) throw new Error('Strategy disable is unavailable in mock mode')
+    return toStrategy(await api.post<RawStrategy>(`/strategies/${id}/disable`))
+  },
+  evaluate: async (input: EvaluateStrategyInput): Promise<StrategyEvaluation[]> => {
+    if (isMockEnabled()) return []
+    return (
+      await api.post<RawStrategyEvaluation[]>('/strategies/evaluate', {
+        symbol: input.symbol,
+        timeframe: input.timeframe,
+        strategy_ids: input.strategy_ids,
+      })
+    ).map(toStrategyEvaluation)
   },
 }

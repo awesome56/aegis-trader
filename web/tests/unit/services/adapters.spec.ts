@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   toAllocationBreakdown,
+  toBacktest,
+  toBacktestPage,
+  toBacktestResult,
   toCandleSeries,
   toDashboardData,
   toMarketOverview,
@@ -541,6 +544,64 @@ describe('adapters', () => {
     expect(event.link).toBe('/agent/proposals/pr-1')
     expect(event.actor).toBe('owner')
     expect(page.pageSize).toBe(50)
+  })
+
+  it('maps backtests and results', () => {
+    const raw = {
+      id: 'bt-1',
+      strategy_id: 's-1',
+      strategy_name: 'Trend Following',
+      name: 'Trend — AAPL',
+      symbols: ['AAPL'],
+      timeframe: '1d',
+      start_date: '2025-01-01',
+      end_date: '2025-06-01',
+      initial_capital: '100000',
+      benchmark_symbol: 'SPY',
+      status: 'COMPLETED',
+      created_at: '2026-01-15T15:00:00+00:00',
+      started_at: '2026-01-15T15:00:00+00:00',
+      completed_at: '2026-01-15T15:00:05+00:00',
+      error: null,
+      final_capital: '112000',
+      total_return_pct: '12.00',
+      max_drawdown_pct: '6.20',
+      num_trades: 8,
+    }
+    const backtest = toBacktest(raw as never)
+    expect(backtest.status).toBe('COMPLETED')
+    expect(backtest.total_return_pct).toBe('12.00')
+
+    const page = toBacktestPage({ items: [raw], total: 1, page: 1, page_size: 25 } as never)
+    expect(page.pageSize).toBe(25)
+    expect(page.items[0]?.symbols).toEqual(['AAPL'])
+
+    const result = toBacktestResult({
+      backtest_id: 'bt-1',
+      engine_version: 'phase8-v1',
+      strategy_config: { strategy: { key: 'trend_following' } },
+      metrics: {
+        initial_capital: '100000', final_capital: '112000', net_profit: '12000',
+        total_return_pct: '12', benchmark_return_pct: '7.4', num_trades: 1,
+        wins: 1, losses: 0, win_rate: '100', average_win: '12000', average_loss: '0',
+        largest_win: '12000', largest_loss: '0', gross_profit: '12000', gross_loss: '0',
+        profit_factor: null, expectancy: '12000', max_drawdown: '0', max_drawdown_pct: '0',
+        sharpe_ratio: null, sortino_ratio: null, total_fees: '10', total_slippage: '5',
+        average_holding_seconds: '86400', exposure_pct: '50',
+      },
+      equity_curve: [
+        { timestamp: '2026-01-15T15:00:00+00:00', cash: '100000', positions_value: '0', equity: '100000', cumulative_return_pct: '0', drawdown_pct: '0' },
+      ],
+      drawdown_curve: [{ timestamp: '2026-01-15T15:00:00+00:00', drawdown_pct: '0' }],
+      monthly_returns: [{ month: '2025-01', return_pct: '3.2' }],
+      trades: [
+        { symbol: 'AAPL', side: 'LONG', quantity: '100', entry_time: '2026-01-15T15:00:00+00:00', entry_price: '180', exit_time: '2026-01-16T15:00:00+00:00', exit_price: '190', gross_pnl: '1000', fees: '10', slippage: '5', net_pnl: '985', return_pct: '5.47', holding_period_seconds: 86400, exit_reason: 'SIGNAL' },
+      ],
+    } as never)
+    expect(result.metrics.profit_factor).toBeNull()
+    expect(result.equity_curve).toHaveLength(1)
+    expect(result.trades[0]?.net_pnl).toBe('985')
+    expect(result.monthly_returns[0]?.month).toBe('2025-01')
   })
 
   it('assembles dashboard data from multiple sources', () => {

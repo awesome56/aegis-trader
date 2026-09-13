@@ -118,6 +118,20 @@ export function applyEventToCache(queryClient: QueryClient, event: AnyTradingEve
       invalidate(queryKeys.notificationUnread)
       break
 
+    case WS_EVENTS.backtestCreated:
+    case WS_EVENTS.backtestStarted:
+    case WS_EVENTS.backtestCompleted:
+    case WS_EVENTS.backtestFailed:
+    case WS_EVENTS.backtestCancelled: {
+      invalidate(queryKeys.backtestsRoot)
+      const backtestId = typeof data.backtest_id === 'string' ? data.backtest_id : null
+      if (backtestId) {
+        invalidate(queryKeys.backtest(backtestId))
+        invalidate(queryKeys.backtestResult(backtestId))
+      }
+      break
+    }
+
     case WS_EVENTS.systemStatusChanged:
       invalidate(queryKeys.systemStatus)
       break

@@ -134,3 +134,19 @@ async def _run_monitor_open_orders(ctx: dict[str, Any], settings: Settings) -> d
     if ctx.get("redis") is not None:
         await write_heartbeat(ctx["redis"], settings)
     return {"job": "open_order_monitor", "open_orders": open_orders}
+
+
+async def run_backtest(ctx: dict[str, Any], backtest_id: str) -> dict[str, Any]:
+    """Execute a queued backtest. Idempotent: a completed run returns unchanged."""
+    import uuid
+
+    from app.backtesting.service import BacktestService
+
+    settings = _settings(ctx)
+    async with worker_session() as session:
+        backtest = await BacktestService(session, settings).execute(uuid.UUID(backtest_id))
+        status = backtest.status.value
+    if ctx.get("redis") is not None:
+        await write_heartbeat(ctx["redis"], settings)
+    logger.info("worker_job_done", job="run_backtest", backtest_id=backtest_id, status=status)
+    return {"job": "run_backtest", "backtest_id": backtest_id, "status": status}

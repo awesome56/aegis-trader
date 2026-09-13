@@ -1931,6 +1931,187 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/backtests:
+    get:
+      tags:
+      - backtests
+      summary: List backtests
+      operationId: list_backtests_api_v1_backtests_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 25
+          title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestPageSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - backtests
+      summary: Create + run a backtest
+      operationId: create_backtest_api_v1_backtests_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestCreateRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/backtests/{backtest_id}:
+    get:
+      tags:
+      - backtests
+      summary: Backtest detail
+      operationId: get_backtest_api_v1_backtests__backtest_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: backtest_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Backtest Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/backtests/{backtest_id}/result:
+    get:
+      tags:
+      - backtests
+      summary: Backtest result
+      operationId: get_backtest_result_api_v1_backtests__backtest_id__result_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: backtest_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Backtest Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResultSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/backtests/{backtest_id}/run:
+    post:
+      tags:
+      - backtests
+      summary: Run a queued backtest
+      operationId: run_backtest_api_v1_backtests__backtest_id__run_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: backtest_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Backtest Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/backtests/{backtest_id}/cancel:
+    post:
+      tags:
+      - backtests
+      summary: Cancel a pending backtest
+      operationId: cancel_backtest_api_v1_backtests__backtest_id__cancel_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: backtest_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Backtest Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       tags:
@@ -2129,6 +2310,486 @@ components:
       - user
       - tokens
       title: AuthResponse
+    BacktestCreateRequest:
+      properties:
+        strategy_id:
+          type: string
+          format: uuid
+          title: Strategy Id
+        name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Name
+        symbols:
+          items:
+            type: string
+          type: array
+          maxItems: 10
+          minItems: 1
+          title: Symbols
+        timeframe:
+          type: string
+          maxLength: 16
+          title: Timeframe
+          default: 1d
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        initial_capital:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Initial Capital
+        position_size_percent:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Position Size Percent
+        fees_pct:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Fees Pct
+        slippage_pct:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Slippage Pct
+        benchmark_symbol:
+          anyOf:
+          - type: string
+            maxLength: 32
+          - type: 'null'
+          title: Benchmark Symbol
+        force_close_at_end:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Force Close At End
+      type: object
+      required:
+      - strategy_id
+      - symbols
+      - start_date
+      - end_date
+      - initial_capital
+      title: BacktestCreateRequest
+    BacktestMetricsSchema:
+      properties:
+        initial_capital:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Initial Capital
+        final_capital:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Final Capital
+        net_profit:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Net Profit
+        total_return_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Return Pct
+        benchmark_return_pct:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Benchmark Return Pct
+        num_trades:
+          type: integer
+          title: Num Trades
+        wins:
+          type: integer
+          title: Wins
+        losses:
+          type: integer
+          title: Losses
+        win_rate:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Win Rate
+        average_win:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Average Win
+        average_loss:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Average Loss
+        largest_win:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Largest Win
+        largest_loss:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Largest Loss
+        gross_profit:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Gross Profit
+        gross_loss:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Gross Loss
+        profit_factor:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Profit Factor
+        expectancy:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Expectancy
+        max_drawdown:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Drawdown
+        max_drawdown_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Max Drawdown Pct
+        sharpe_ratio:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Sharpe Ratio
+        sortino_ratio:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Sortino Ratio
+        total_fees:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Fees
+        total_slippage:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Total Slippage
+        average_holding_seconds:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Average Holding Seconds
+        exposure_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Exposure Pct
+      type: object
+      required:
+      - initial_capital
+      - final_capital
+      - net_profit
+      - total_return_pct
+      - benchmark_return_pct
+      - num_trades
+      - wins
+      - losses
+      - win_rate
+      - average_win
+      - average_loss
+      - largest_win
+      - largest_loss
+      - gross_profit
+      - gross_loss
+      - profit_factor
+      - expectancy
+      - max_drawdown
+      - max_drawdown_pct
+      - sharpe_ratio
+      - sortino_ratio
+      - total_fees
+      - total_slippage
+      - average_holding_seconds
+      - exposure_pct
+      title: BacktestMetricsSchema
+    BacktestPageSchema:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/BacktestSchema'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: BacktestPageSchema
+    BacktestResultSchema:
+      properties:
+        backtest_id:
+          type: string
+          format: uuid
+          title: Backtest Id
+        engine_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Engine Version
+        strategy_config:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Strategy Config
+        metrics:
+          $ref: '#/components/schemas/BacktestMetricsSchema'
+        equity_curve:
+          items:
+            $ref: '#/components/schemas/EquityCurvePointSchema'
+          type: array
+          title: Equity Curve
+        drawdown_curve:
+          items:
+            $ref: '#/components/schemas/DrawdownPointSchema'
+          type: array
+          title: Drawdown Curve
+        monthly_returns:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Monthly Returns
+        trades:
+          items:
+            $ref: '#/components/schemas/BacktestTradeSchema'
+          type: array
+          title: Trades
+      type: object
+      required:
+      - backtest_id
+      - engine_version
+      - strategy_config
+      - metrics
+      - equity_curve
+      - drawdown_curve
+      - monthly_returns
+      - trades
+      title: BacktestResultSchema
+    BacktestSchema:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        strategy_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Strategy Id
+        strategy_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Strategy Name
+        name:
+          type: string
+          title: Name
+        symbols:
+          items:
+            type: string
+          type: array
+          title: Symbols
+        timeframe:
+          type: string
+          title: Timeframe
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        initial_capital:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Initial Capital
+        benchmark_symbol:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Benchmark Symbol
+        status:
+          $ref: '#/components/schemas/BacktestStatus'
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+        final_capital:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Final Capital
+        total_return_pct:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Total Return Pct
+        max_drawdown_pct:
+          anyOf:
+          - type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          - type: 'null'
+          title: Max Drawdown Pct
+        num_trades:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Num Trades
+      type: object
+      required:
+      - id
+      - strategy_id
+      - name
+      - symbols
+      - timeframe
+      - start_date
+      - end_date
+      - initial_capital
+      - benchmark_symbol
+      - status
+      - created_at
+      - started_at
+      - completed_at
+      - error
+      title: BacktestSchema
+    BacktestStatus:
+      type: string
+      enum:
+      - PENDING
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
+      title: BacktestStatus
+    BacktestTradeSchema:
+      properties:
+        symbol:
+          type: string
+          title: Symbol
+        side:
+          type: string
+          title: Side
+        quantity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Quantity
+        entry_time:
+          type: string
+          format: date-time
+          title: Entry Time
+        entry_price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Entry Price
+        exit_time:
+          type: string
+          format: date-time
+          title: Exit Time
+        exit_price:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Exit Price
+        gross_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Gross Pnl
+        fees:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Fees
+        slippage:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Slippage
+        net_pnl:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Net Pnl
+        return_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Return Pct
+        holding_period_seconds:
+          type: integer
+          title: Holding Period Seconds
+        exit_reason:
+          type: string
+          title: Exit Reason
+      type: object
+      required:
+      - symbol
+      - side
+      - quantity
+      - entry_time
+      - entry_price
+      - exit_time
+      - exit_price
+      - gross_pnl
+      - fees
+      - slippage
+      - net_pnl
+      - return_pct
+      - holding_period_seconds
+      - exit_reason
+      title: BacktestTradeSchema
     BollingerSchema:
       properties:
         period:
@@ -2756,6 +3417,56 @@ components:
       - recent_notifications
       - availability
       title: DashboardSchema
+    DrawdownPointSchema:
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        drawdown_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Drawdown Pct
+      type: object
+      required:
+      - timestamp
+      - drawdown_pct
+      title: DrawdownPointSchema
+    EquityCurvePointSchema:
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        cash:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cash
+        positions_value:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Positions Value
+        equity:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Equity
+        cumulative_return_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Cumulative Return Pct
+        drawdown_pct:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Drawdown Pct
+      type: object
+      required:
+      - timestamp
+      - cash
+      - positions_value
+      - equity
+      - cumulative_return_pct
+      - drawdown_pct
+      title: EquityCurvePointSchema
     EvaluateRequest:
       properties:
         symbol:

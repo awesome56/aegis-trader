@@ -261,6 +261,100 @@ export interface RawActivityPage {
   page_size: number
 }
 
+export interface RawBacktest {
+  id: string
+  strategy_id: string | null
+  strategy_name: string | null
+  name: string
+  symbols: string[]
+  timeframe: string
+  start_date: string
+  end_date: string
+  initial_capital: Numeric
+  benchmark_symbol: string | null
+  status: string
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+  error: string | null
+  final_capital: Numeric | null
+  total_return_pct: Numeric | null
+  max_drawdown_pct: Numeric | null
+  num_trades: number | null
+}
+
+export interface RawBacktestPage {
+  items: RawBacktest[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface RawBacktestMetrics {
+  initial_capital: Numeric
+  final_capital: Numeric
+  net_profit: Numeric
+  total_return_pct: Numeric
+  benchmark_return_pct: Numeric | null
+  num_trades: number
+  wins: number
+  losses: number
+  win_rate: Numeric
+  average_win: Numeric
+  average_loss: Numeric
+  largest_win: Numeric
+  largest_loss: Numeric
+  gross_profit: Numeric
+  gross_loss: Numeric
+  profit_factor: Numeric | null
+  expectancy: Numeric
+  max_drawdown: Numeric
+  max_drawdown_pct: Numeric
+  sharpe_ratio: Numeric | null
+  sortino_ratio: Numeric | null
+  total_fees: Numeric
+  total_slippage: Numeric
+  average_holding_seconds: Numeric
+  exposure_pct: Numeric
+}
+
+export interface RawEquityPoint {
+  timestamp: string
+  cash: Numeric
+  positions_value: Numeric
+  equity: Numeric
+  cumulative_return_pct: Numeric
+  drawdown_pct: Numeric
+}
+
+export interface RawBacktestTrade {
+  symbol: string
+  side: string
+  quantity: Numeric
+  entry_time: string
+  entry_price: Numeric
+  exit_time: string
+  exit_price: Numeric
+  gross_pnl: Numeric
+  fees: Numeric
+  slippage: Numeric
+  net_pnl: Numeric
+  return_pct: Numeric
+  holding_period_seconds: number
+  exit_reason: string
+}
+
+export interface RawBacktestResult {
+  backtest_id: string
+  engine_version: string | null
+  strategy_config: Record<string, unknown> | null
+  metrics: RawBacktestMetrics
+  equity_curve: RawEquityPoint[]
+  drawdown_curve: { timestamp: string; drawdown_pct: Numeric }[]
+  monthly_returns: { month: string; return_pct: Numeric }[]
+  trades: RawBacktestTrade[]
+}
+
 export interface RawDashboard {
   portfolio: RawPortfolioSummary
   trading_mode: string

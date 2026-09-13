@@ -9,7 +9,7 @@ export function useBacktests(params: MaybeRefOrGetter<PageParams> = {}) {
   return useQuery<Paginated<Backtest>>({
     queryKey: computed(() => queryKeys.backtests(toValue(params))),
     queryFn: () => backtestsService.list(toValue(params)),
-    staleTime: 30_000,
+    staleTime: 10_000,
   })
 }
 
@@ -18,6 +18,10 @@ export function useBacktest(id: MaybeRefOrGetter<string>) {
     queryKey: computed(() => queryKeys.backtest(toValue(id))),
     queryFn: () => backtestsService.get(toValue(id)),
     enabled: computed(() => Boolean(toValue(id))),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status === 'PENDING' || status === 'RUNNING' ? 3000 : false
+    },
   })
 }
 
@@ -26,16 +30,28 @@ export function useBacktestResult(id: MaybeRefOrGetter<string>) {
     queryKey: computed(() => queryKeys.backtestResult(toValue(id))),
     queryFn: () => backtestsService.result(toValue(id)),
     enabled: computed(() => Boolean(toValue(id))),
+    retry: false,
   })
 }
 
-/** Submit a backtest configuration to the backend (all computation is server-side). */
+/** Submit a backtest configuration; computation is entirely server-side. */
 export function useRunBacktest() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (config: BacktestConfig) => backtestsService.run(config),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.backtests() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.backtestsRoot })
+    },
+  })
+}
+
+export function useCancelBacktest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => backtestsService.cancel(id),
+    onSuccess: (_result, id) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.backtestsRoot })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.backtest(id) })
     },
   })
 }

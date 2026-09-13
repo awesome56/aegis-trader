@@ -19,7 +19,12 @@ from arq.connections import RedisSettings
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 from app.workers.heartbeat import write_heartbeat
-from app.workers.jobs import evaluate_strategies, monitor_open_orders, portfolio_snapshot
+from app.workers.jobs import (
+    evaluate_strategies,
+    monitor_open_orders,
+    portfolio_snapshot,
+    run_backtest,
+)
 
 logger = get_logger(__name__)
 
@@ -82,7 +87,7 @@ def build_cron_jobs(settings: Settings | None = None) -> list[Any]:
 
 
 class WorkerSettings:
-    functions = [portfolio_snapshot, evaluate_strategies, monitor_open_orders]
+    functions = [portfolio_snapshot, evaluate_strategies, monitor_open_orders, run_backtest]
     cron_jobs = build_cron_jobs()
     redis_settings = RedisSettings.from_dsn(get_settings().REDIS_URL)
     on_startup = startup

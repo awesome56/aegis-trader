@@ -47,6 +47,7 @@ export const queryKeys = {
   strategySignals: (params: PageParams = {}) => ['strategies', 'signals', params] as const,
 
   backtests: (params: PageParams = {}) => ['backtests', params] as const,
+  backtestsRoot: ['backtests'] as const,
   backtest: (id: string) => ['backtests', id] as const,
   backtestResult: (id: string) => ['backtests', id, 'result'] as const,
 

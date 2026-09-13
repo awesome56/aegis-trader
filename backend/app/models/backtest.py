@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import MONEY, Base, JSONType, TimestampMixin, UUIDMixin
@@ -15,7 +15,11 @@ from app.models.enums import BacktestStatus
 
 class Backtest(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "backtests"
+    __table_args__ = (Index("ix_backtests_user_created", "user_id", "created_at"),)
 
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     strategy_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("strategies.id", ondelete="SET NULL"), index=True
     )
@@ -30,6 +34,8 @@ class Backtest(UUIDMixin, TimestampMixin, Base):
         Enum(BacktestStatus, native_enum=False), default=BacktestStatus.PENDING, nullable=False
     )
     parameters: Mapped[dict | None] = mapped_column(JSONType)
+    # Immutable snapshot of strategy + execution assumptions for reproducibility.
+    config_snapshot: Mapped[dict | None] = mapped_column(JSONType)
     error: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -66,5 +72,10 @@ class BacktestResult(UUIDMixin, TimestampMixin, Base):
 
     equity_curve: Mapped[list | None] = mapped_column(JSONType)
     trade_history: Mapped[list | None] = mapped_column(JSONType)
+    # Full metrics snapshot + derived series + reproducibility metadata.
+    metrics: Mapped[dict | None] = mapped_column(JSONType)
+    monthly_returns: Mapped[list | None] = mapped_column(JSONType)
+    strategy_config: Mapped[dict | None] = mapped_column(JSONType)
+    engine_version: Mapped[str | None] = mapped_column(String(32))
 
     backtest: Mapped[Backtest] = relationship(back_populates="result")

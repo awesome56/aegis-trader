@@ -93,6 +93,17 @@ class Settings(BaseSettings):
     WORKER_LOCK_TTL_SECONDS: int = 60
     WORKER_STRATEGY_SYMBOLS: str = ""  # comma-separated; falls back to MOCK_MARKET_SYMBOLS
 
+    # --- Backtesting (Phase 8) ----------------------------------------------
+    BACKTEST_ENABLED: bool = True
+    BACKTEST_MAX_CONCURRENT_PER_USER: int = 2
+    BACKTEST_MAX_CANDLES: int = 5000
+    BACKTEST_MAX_RANGE_DAYS: int = 3650
+    BACKTEST_DEFAULT_INITIAL_CAPITAL: float = 100000.0
+    BACKTEST_DEFAULT_POSITION_PERCENT: float = 100.0
+    BACKTEST_DEFAULT_COMMISSION_PCT: float = 0.0
+    BACKTEST_DEFAULT_SLIPPAGE_PCT: float = 0.0
+    BACKTEST_FORCE_CLOSE_AT_END: bool = True
+
     # --- Market data ---------------------------------------------------------
     MARKET_DATA_PROVIDER: str = "mock"
     # Legacy aliases (superseded by the explicit settings below; retained for

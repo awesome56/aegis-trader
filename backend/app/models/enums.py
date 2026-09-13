@@ -144,6 +144,7 @@ class BacktestStatus(StrEnum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
 
 
 class NotificationSeverity(StrEnum):

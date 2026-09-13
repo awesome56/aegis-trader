@@ -101,12 +101,21 @@ def test_agent_layer_has_no_execution_modules() -> None:
 
 
 def test_agent_tool_registry_excludes_execution_tools() -> None:
-    from app.agents.tools import FORBIDDEN_TOOLS, READ_TOOLS, WRITE_TOOLS
+    from app.agents.tools import (
+        BROKER_WRITE_TOOL_ACTIONS,
+        FORBIDDEN_TOOLS,
+        READ_TOOLS,
+        WRITE_TOOLS,
+    )
 
     available = set(READ_TOOLS) | set(WRITE_TOOLS)
-    assert WRITE_TOOLS == ("create_trade_proposal",)
+    # The only write tools are proposal creation and the gateway-enforced broker
+    # actions; there is no raw order-submission tool.
+    assert set(WRITE_TOOLS) == {"create_trade_proposal", *BROKER_WRITE_TOOL_ACTIONS}
     for name in FORBIDDEN_TOOLS:
         assert name not in available
+    for raw in ("submit_order", "broker_raw_request", "execute_proposal"):
+        assert raw not in available
 
 
 def test_dependency_direction_agents_to_market_only() -> None:

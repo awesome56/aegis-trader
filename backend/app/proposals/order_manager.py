@@ -22,6 +22,7 @@ from app.brokers.base import BrokerAdapter
 from app.brokers.types import BrokerOrderRequest
 from app.core.config import Settings, get_settings
 from app.core.exceptions import AegisError, ConflictError, NotFoundError
+from app.core.logging import get_logger
 from app.market.services.market_data import MarketDataService
 from app.models.enums import NotificationSeverity, ProposalStatus, RiskDecision
 from app.models.proposal import TradeProposal
@@ -33,6 +34,8 @@ from app.realtime.events import DomainEvent, queue_event
 from app.repositories.order import OrderRepository
 from app.repositories.proposal import TradeProposalRepository
 from app.risk.service import RiskEngine
+
+logger = get_logger(__name__)
 
 BPS = Decimal("10000")
 _APPROVED = {RiskDecision.APPROVED, RiskDecision.APPROVED_WITH_WARNINGS}
@@ -60,7 +63,11 @@ class OrderManager:
         self._orders = OrderRepository(session)
 
     async def execute(
-        self, proposal_id: uuid.UUID, *, actor: str | None = None
+        self,
+        proposal_id: uuid.UUID,
+        *,
+        actor: str | None = None,
+        allow_risk_reducing: bool = False,
     ) -> ExecutionOutcome:
         proposal = await self._proposals.get_locked(proposal_id)
         if proposal is None:
@@ -117,12 +124,22 @@ class OrderManager:
         if (
             self._settings.EXECUTION_REQUIRE_FINAL_RISK_REVALIDATION
             and final.decision not in _APPROVED
+            and not allow_risk_reducing
         ):
             return await self._fail(
                 proposal,
                 f"final risk revalidation rejected: {', '.join(final.reasons)}",
                 final_evaluation_id=final.id,
                 final_decision=final.decision.value,
+            )
+        if allow_risk_reducing and final.decision not in _APPROVED:
+            # Risk-reducing actions (reduce/close) are allowed to proceed even
+            # when a risk limit is already exceeded; the revalidation is still
+            # recorded for audit. Trading-state/kill-switch checks still apply.
+            logger.warning(
+                "risk_reducing_override",
+                proposal_id=str(proposal.id),
+                decision=final.decision.value,
             )
 
         # Price-movement guard: do not submit an old proposal at a very different price.

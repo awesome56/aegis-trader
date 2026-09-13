@@ -33,6 +33,20 @@ from app.strategies.regime import MarketRegimeService
 
 logger = get_logger(__name__)
 
+BROKER_READ_TOOLS = (
+    "broker_get_account",
+    "broker_get_positions",
+    "broker_get_open_orders",
+    "broker_get_quote",
+    "broker_get_clock",
+)
+BROKER_WRITE_TOOL_ACTIONS = {
+    "broker_open_position": "OPEN",
+    "broker_add_to_position": "ADD",
+    "broker_reduce_position": "REDUCE",
+    "broker_close_position": "CLOSE",
+    "broker_cancel_order": "CANCEL_ORDER",
+}
 READ_TOOLS = (
     "get_market_context",
     "get_quote",
@@ -45,8 +59,13 @@ READ_TOOLS = (
     "get_risk_status",
     "get_recent_trades",
     "get_recent_proposals",
+    "broker_get_account",
+    "broker_get_positions",
+    "broker_get_open_orders",
+    "broker_get_quote",
+    "broker_get_clock",
 )
-WRITE_TOOLS = ("create_trade_proposal",)
+WRITE_TOOLS = ("create_trade_proposal", *BROKER_WRITE_TOOL_ACTIONS)
 # Tools that must never exist on the agent (defence in depth for tests).
 FORBIDDEN_TOOLS = (
     "submit_order",
@@ -69,6 +88,9 @@ class AgentToolContext:
     timeframe: str
     mode: AgentRunMode
     settings: Settings
+    broker_account_id: uuid.UUID | None = None
+    # AutoTradeAction values permitted for autonomous broker writes.
+    auto_actions: frozenset[str] = frozenset()
 
     def market(self) -> MarketDataService:
         return MarketDataService(self.session, settings=self.settings)
@@ -166,6 +188,49 @@ class AgentToolRegistry:
                     ["symbol", "side"],
                 )
             )
+        specs.extend(
+            [
+                _spec(
+                    "broker_get_account",
+                    "Broker account state (cash, buying power, equity).",
+                    {},
+                    [],
+                ),
+                _spec("broker_get_positions", "Open broker positions.", {}, []),
+                _spec(
+                    "broker_get_open_orders", "Working broker orders.", {}, []
+                ),
+                _spec(
+                    "broker_get_quote",
+                    "Broker quote for a symbol.",
+                    {"symbol": _STRING},
+                    ["symbol"],
+                ),
+                _spec("broker_get_clock", "Broker market clock.", {}, []),
+            ]
+        )
+        if self._ctx.broker_account_id is not None:
+            for tool, action in BROKER_WRITE_TOOL_ACTIONS.items():
+                if action in self._ctx.auto_actions:
+                    specs.append(
+                        _spec(
+                            tool,
+                            f"Autonomous broker action {action} (goes through the safety gateway).",
+                            {
+                                "symbol": _STRING,
+                                "side": _STRING,
+                                "order_type": _STRING,
+                                "quantity": {"type": "number"},
+                                "notional": {"type": "number"},
+                                "percent": {"type": "number"},
+                                "limit_price": {"type": "number"},
+                                "stop_loss": {"type": "number"},
+                                "take_profit": {"type": "number"},
+                                "order_id": _STRING,
+                            },
+                            ["symbol"],
+                        )
+                    )
         return specs
 
     # --- execution ----------------------------------------------------------
@@ -174,6 +239,14 @@ class AgentToolRegistry:
     ) -> tuple[bool, dict, str]:
         if name in FORBIDDEN_TOOLS or name not in (*READ_TOOLS, *WRITE_TOOLS):
             return False, {"error": "tool_not_available"}, f"tool {name} is not available"
+        if name in BROKER_WRITE_TOOL_ACTIONS:
+            action = BROKER_WRITE_TOOL_ACTIONS[name]
+            if self._ctx.broker_account_id is None or action not in self._ctx.auto_actions:
+                return (
+                    False,
+                    {"error": "auto_trading_not_permitted"},
+                    f"{name} is not permitted",
+                )
         if name == "create_trade_proposal" and self._ctx.mode is not AgentRunMode.PROPOSE:
             return (
                 False,
@@ -444,6 +517,118 @@ class AgentToolRegistry:
             "symbol": proposal.symbol,
             "note": "DRAFT proposal only; it still requires risk evaluation and manual execution.",
         }
+
+    # --- broker read tools --------------------------------------------------
+    async def _broker_account(self):  # noqa: ANN202
+        from app.repositories.broker_account import BrokerAccountRepository
+
+        account = await BrokerAccountRepository(self._ctx.session).get_for_user(
+            self._ctx.broker_account_id, self._ctx.user.id
+        )
+        if account is None:
+            raise ValidationError("no broker account is configured for this run")
+        return account
+
+    async def _broker(self):  # noqa: ANN202
+        from app.brokers.router import BrokerRouter
+
+        account = await self._broker_account()
+        return account, await BrokerRouter(self._ctx.session, self._ctx.settings).route(
+            user=self._ctx.user, account=account
+        )
+
+    async def _tool_broker_get_account(self, args, *, idempotency_key=None):  # noqa: ANN001
+        _, broker = await self._broker()
+        state = await broker.get_account()
+        return state.model_dump(mode="json") if hasattr(state, "model_dump") else dict(state)
+
+    async def _tool_broker_get_positions(self, args, *, idempotency_key=None):  # noqa: ANN001
+        _, broker = await self._broker()
+        positions = await broker.get_positions()
+        return {
+            "positions": [
+                position.model_dump(mode="json")
+                if hasattr(position, "model_dump")
+                else dict(position)
+                for position in positions
+            ]
+        }
+
+    async def _tool_broker_get_open_orders(self, args, *, idempotency_key=None):  # noqa: ANN001
+        _, broker = await self._broker()
+        orders = await broker.get_orders(limit=50)
+        return {
+            "orders": [
+                order.model_dump(mode="json") if hasattr(order, "model_dump") else dict(order)
+                for order in orders
+            ]
+        }
+
+    async def _tool_broker_get_quote(self, args, *, idempotency_key=None) -> dict:  # noqa: ANN001
+        symbol = self._symbol(args.get("symbol") or self._ctx.symbol)
+        _, broker = await self._broker()
+        quote = await broker.get_quote(symbol)
+        return quote.model_dump(mode="json") if hasattr(quote, "model_dump") else dict(quote)
+
+    async def _tool_broker_get_clock(self, args, *, idempotency_key=None) -> dict:  # noqa: ANN001
+        _, broker = await self._broker()
+        clock = await broker.get_market_clock()
+        return clock.model_dump(mode="json") if hasattr(clock, "model_dump") else dict(clock)
+
+    # --- broker write tools (gateway-enforced) ------------------------------
+    def _gateway(self):  # noqa: ANN202
+        from app.auto_trading.gateway import BrokerSafetyGateway
+
+        return BrokerSafetyGateway(self._ctx.session, self._ctx.user, self._ctx.settings)
+
+    async def _broker_action(self, tool: str, args: dict, idempotency_key: str | None) -> dict:
+        from app.models.enums import AutoTradeAction
+
+        account = await self._broker_account()
+        action = AutoTradeAction(BROKER_WRITE_TOOL_ACTIONS[tool])
+        return await self._gateway().execute(
+            account=account,
+            action=action,
+            symbol=args.get("symbol") or self._ctx.symbol,
+            side=__import__("app.models.enums", fromlist=["TradeSide"]).TradeSide(side)
+            if (side := str(args.get("side", "")).upper()) in ("BUY", "SELL")
+            else None,
+            quantity=_decimal(args.get("quantity")),
+            notional=_decimal(args.get("notional")),
+            percent=_decimal(args.get("percent")),
+            limit_price=_decimal(args.get("limit_price")),
+            stop_loss=_decimal(args.get("stop_loss")),
+            take_profit=_decimal(args.get("take_profit")),
+            confidence=_decimal(args.get("confidence")),
+            reason=str(args.get("summary"))[:500] if args.get("summary") else None,
+            idempotency_key=idempotency_key,
+        )
+
+    async def _tool_broker_open_position(self, args, *, idempotency_key=None):  # noqa: ANN001
+        return (await self._broker_action("broker_open_position", args, idempotency_key)).as_dict()
+
+    async def _tool_broker_add_to_position(self, args, *, idempotency_key=None):  # noqa: ANN001
+        return (
+            await self._broker_action("broker_add_to_position", args, idempotency_key)
+        ).as_dict()
+
+    async def _tool_broker_reduce_position(self, args, *, idempotency_key=None):  # noqa: ANN001
+        return (
+            await self._broker_action("broker_reduce_position", args, idempotency_key)
+        ).as_dict()
+
+    async def _tool_broker_close_position(self, args, *, idempotency_key=None):  # noqa: ANN001
+        return (await self._broker_action("broker_close_position", args, idempotency_key)).as_dict()
+
+    async def _tool_broker_cancel_order(self, args, *, idempotency_key=None):  # noqa: ANN001
+        order_id = args.get("order_id")
+        if not order_id:
+            raise ValidationError("order_id is required to cancel")
+        account = await self._broker_account()
+        result = await self._gateway().cancel_order(
+            account=account, order_id=uuid.UUID(str(order_id))
+        )
+        return result.as_dict()
 
     # --- helpers ------------------------------------------------------------
     async def _portfolio_service(self):  # noqa: ANN202

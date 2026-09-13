@@ -247,3 +247,55 @@ WebSocket events: `strategy.signal`, `strategy.enabled`, `strategy.disabled`,
 
 > Strategies do not trade. Risk does not trade. Phase 7 owns execution
 > orchestration.
+
+---
+
+## Signal activation (deterministic scenarios)
+
+The mock provider can emit reproducible scenario series instead of its default
+pseudo-random walk. Set `MOCK_MARKET_SCENARIO` to one of: `uptrend`,
+`downtrend`, `momentum_bullish`, `momentum_bearish`, `mean_reversion_oversold`,
+`mean_reversion_overbought`, `sideways`, `high_volatility`.
+
+Persist real signals through the **real** strategy engine (regime + Phase 2
+indicators), never by inserting rows directly:
+
+```bash
+python -m scripts.seed_strategy_signals --scenario momentum_bullish --symbols AAPL,NVDA
+```
+
+Idempotent per candle window; never creates proposals/orders and never touches
+broker/positions/risk state.
+
+## Backtesting (Phase 8)
+
+Deterministic, isolated simulation that reuses the exact same strategy
+implementations and indicators as live evaluation. It never calls brokers,
+OrderManager, RiskEngine, the portfolio, or the execution pipeline, and never
+alters paper/live state.
+
+- **Execution timing**: a signal from completed candle *N* executes at the
+  **open of candle N+1**; no next candle → no execution.
+- **Lookahead**: strategies receive `candles[:i+1]` only (unit-tested).
+- **Direction**: long-only V1 — LONG opens/increases, SHORT closes an existing
+  long, NEUTRAL ignored. Single symbol (schema is multi-symbol capable).
+- **Sizing**: `position_size_percent` of available cash per entry.
+- **Costs**: `fees_pct` on notional (entry and exit); `slippage_pct` adverse to
+  the trade direction. Pure helpers in `app/backtesting/costs.py`.
+- **End of range**: open positions are force-closed at the final close with
+  `exit_reason=END_OF_BACKTEST` when `force_close_at_end` is set.
+- **Metrics**: final capital, net profit/return, benchmark return, trades,
+  wins/losses, win rate, average/largest win & loss, gross P/L, profit factor,
+  expectancy, max drawdown (value & %), Sharpe, Sortino (zero risk-free rate),
+  total fees, total slippage, average holding, exposure.
+- **Reproducibility**: config snapshot (strategy parameters + execution
+  assumptions + engine version) is persisted with each run.
+- **Runs on the existing ARQ worker** (`run_backtest`); the API creates a
+  `PENDING` row and enqueues it, falling back to inline execution when Redis is
+  unavailable.
+
+Endpoints: `GET|POST /backtests`, `GET /backtests/{id}`,
+`GET /backtests/{id}/result`, `POST /backtests/{id}/run`,
+`POST /backtests/{id}/cancel`. Events: `backtest.created|started|completed|failed|cancelled`.
+
+> Past/backtested performance does not guarantee future results.

@@ -109,7 +109,9 @@ class CompositeMarketDataProvider(MarketDataProvider):
                         checked_at=datetime.now(UTC),
                     )
                 )
-        connected = [r for r in reports if r.status is ProviderStatus.CONNECTED]
+        connected = [
+            r for r in reports if r.status in (ProviderStatus.CONNECTED, ProviderStatus.MOCK)
+        ]
         if len(connected) == len(reports):
             status = ProviderStatus.CONNECTED
         elif connected:

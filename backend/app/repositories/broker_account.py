@@ -75,3 +75,16 @@ class BrokerAccountRepository(BaseRepository[BrokerAccount]):
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_active_external(self) -> list[BrokerAccount]:
+        """Every active account backed by a real venue adapter (paper excluded)."""
+        stmt = (
+            select(BrokerAccount)
+            .where(
+                BrokerAccount.is_active.is_(True),
+                BrokerAccount.broker != "paper",
+            )
+            .order_by(BrokerAccount.created_at.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

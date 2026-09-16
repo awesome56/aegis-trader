@@ -56,7 +56,131 @@ def test_schedules() -> None:
 
 def test_cron_jobs_built_from_settings() -> None:
     jobs = build_cron_jobs()
-    assert len(jobs) == 4
+    assert len(jobs) == 5
+
+
+async def test_reconcile_broker_state_polls_external_accounts(db_session, monkeypatch) -> None:
+    import uuid
+    from contextlib import asynccontextmanager
+    from decimal import Decimal
+
+    from app.brokers.exceptions import BrokerConfigurationError
+    from app.models.broker import BrokerAccount
+    from app.models.enums import BrokerEnvironment
+    from app.models.user import User
+    from app.workers import jobs as jobs_mod
+
+    user = User(email="reconcile@example.com", hashed_password="x", is_active=True)
+    db_session.add(user)
+    await db_session.flush()
+
+    def _account(broker: str) -> BrokerAccount:
+        return BrokerAccount(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            broker=broker,
+            account_name=f"{broker} account",
+            environment=BrokerEnvironment.DEMO,
+            cash_balance=Decimal("0"),
+            buying_power=Decimal("0"),
+            currency="USD",
+            is_active=True,
+        )
+
+    alpaca = _account("alpaca")
+    paper = _account("paper")
+    db_session.add_all([alpaca, paper])
+    await db_session.flush()
+
+    @asynccontextmanager
+    async def fake_session():
+        yield db_session
+
+    class FakeAdapter:
+        def __init__(self) -> None:
+            self.reconcile_calls = 0
+            self.position_calls = 0
+            self.closed = False
+
+        async def process_open_orders(self):
+            self.reconcile_calls += 1
+            return [object()]
+
+        async def get_positions(self):
+            self.position_calls += 1
+            return [object(), object()]
+
+        async def aclose(self) -> None:
+            self.closed = True
+
+    adapter = FakeAdapter()
+    routed: list[str] = []
+
+    async def fake_route(self, *, user, account, asset_class=None):  # noqa: ANN001, ANN202
+        routed.append(account.broker)
+        if account.broker != "alpaca":
+            raise BrokerConfigurationError("unexpected provider")
+        return adapter
+
+    monkeypatch.setattr(jobs_mod, "worker_session", fake_session)
+    monkeypatch.setattr("app.brokers.router.BrokerRouter.route", fake_route)
+
+    result = await jobs_mod.reconcile_broker_state({})
+
+    # Paper is excluded; only the real venue is polled and closed.
+    assert routed == ["alpaca"]
+    assert result["accounts"] == 1
+    assert result["fills"] == 1
+    assert result["positions"] == 2
+    assert result["skipped"] == 0
+    assert result["failures"] == 0
+    assert adapter.reconcile_calls == 1
+    assert adapter.closed is True
+
+
+async def test_reconcile_broker_state_skips_unroutable_accounts(db_session, monkeypatch) -> None:
+    import uuid
+    from contextlib import asynccontextmanager
+    from decimal import Decimal
+
+    from app.brokers.exceptions import BrokerConfigurationError
+    from app.models.broker import BrokerAccount
+    from app.models.enums import BrokerEnvironment
+    from app.models.user import User
+    from app.workers import jobs as jobs_mod
+
+    user = User(email="reconcile-skip@example.com", hashed_password="x", is_active=True)
+    db_session.add(user)
+    await db_session.flush()
+    account = BrokerAccount(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        broker="alpaca",
+        account_name="locked",
+        environment=BrokerEnvironment.DEMO,
+        cash_balance=Decimal("0"),
+        buying_power=Decimal("0"),
+        currency="USD",
+        is_active=True,
+    )
+    db_session.add(account)
+    await db_session.flush()
+
+    @asynccontextmanager
+    async def fake_session():
+        yield db_session
+
+    async def fake_route(self, *, user, account, asset_class=None):  # noqa: ANN001, ANN202
+        raise BrokerConfigurationError("live broker routing is locked")
+
+    monkeypatch.setattr(jobs_mod, "worker_session", fake_session)
+    monkeypatch.setattr("app.brokers.router.BrokerRouter.route", fake_route)
+
+    result = await jobs_mod.reconcile_broker_state({})
+
+    assert result["accounts"] == 0
+    assert result["skipped"] == 1
+    assert result["failures"] == 0
 
 
 async def test_worker_health_disabled() -> None:

@@ -23,6 +23,7 @@ from app.workers.jobs import (
     evaluate_strategies,
     monitor_open_orders,
     portfolio_snapshot,
+    reconcile_broker_state,
     run_agent,
     run_autonomous_agent,
     run_backtest,
@@ -86,6 +87,11 @@ def build_cron_jobs(settings: Settings | None = None) -> list[Any]:
             run_at_startup=False,
         ),
         cron(
+            reconcile_broker_state,
+            **_schedule(max(30, settings.WORKER_BROKER_RECONCILE_INTERVAL_SECONDS)),
+            run_at_startup=False,
+        ),
+        cron(
             run_autonomous_agent,
             **_schedule(max(60, settings.AUTO_TRADING_AGENT_INTERVAL_SECONDS)),
             run_at_startup=False,
@@ -98,6 +104,7 @@ class WorkerSettings:
         portfolio_snapshot,
         evaluate_strategies,
         monitor_open_orders,
+        reconcile_broker_state,
         run_backtest,
         run_agent,
         run_autonomous_agent,

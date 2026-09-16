@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 
 from app.brokers.bootstrap import ensure_paper_account
 from app.core.config import Settings, get_settings
+from app.core.exceptions import AegisError
 from app.core.logging import get_logger
 from app.models.enums import OrderStatus
 from app.models.order import Order
@@ -28,6 +29,7 @@ LOCK_PORTFOLIO_SNAPSHOT = "aegis:worker:lock:portfolio_snapshot"
 LOCK_STRATEGY_EVALUATION = "aegis:worker:lock:strategy_evaluation"
 LOCK_OPEN_ORDER_MONITOR = "aegis:worker:lock:open_order_monitor"
 LOCK_AUTONOMOUS_AGENT = "aegis:worker:lock:autonomous_agent"
+LOCK_BROKER_RECONCILE = "aegis:worker:lock:broker_reconcile"
 
 _OPEN_STATUSES = [status for status in OrderStatus if not status.is_terminal]
 
@@ -152,6 +154,94 @@ async def _run_evaluate_strategies(ctx: dict[str, Any], settings: Settings) -> d
         "symbols": symbols_evaluated,
         "skip_reasons": skip_reasons,
         "failed_symbols": failed,
+    }
+
+
+async def reconcile_broker_state(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Poll external venues so the local mirror matches reality.
+
+    The paper broker fills synchronously, so this job ignores it. Real venues
+    fill asynchronously: without this poll the orders and positions the UI reads
+    would lag the account. Reconciliation never *creates* orders — it only
+    records what the venue already did.
+    """
+    settings = _settings(ctx)
+    if ctx.get("redis") is not None:
+        try:
+            async with await _lock(ctx["redis"], LOCK_BROKER_RECONCILE, settings):
+                return await _run_reconcile_broker_state(ctx, settings)
+        except LockNotAcquiredError:
+            logger.info("worker_job_skipped", job="broker_reconcile", reason="locked")
+            return {"job": "broker_reconcile", "skipped": True, "reason": "locked"}
+    return await _run_reconcile_broker_state(ctx, settings)
+
+
+async def _run_reconcile_broker_state(
+    ctx: dict[str, Any], settings: Settings
+) -> dict[str, Any]:
+    from app.brokers.router import BrokerRouter
+    from app.models.user import User
+    from app.repositories.broker_account import BrokerAccountRepository
+
+    synced = 0
+    fills = 0
+    positions = 0
+    skipped = 0
+    failures = 0
+    async with worker_session() as session:
+        for account in await BrokerAccountRepository(session).list_active_external():
+            user = await session.get(User, account.user_id)
+            if user is None:
+                skipped += 1
+                continue
+            broker = None
+            try:
+                broker = await BrokerRouter(session, settings).route(user=user, account=account)
+                new_fills = await broker.process_open_orders()
+                fills += len(new_fills)
+                positions += len(await broker.get_positions())
+                synced += 1
+            except AegisError as exc:
+                # A locked live interlock or a missing connection must not stop
+                # the cycle for every other account.
+                skipped += 1
+                logger.warning(
+                    "broker_reconcile_skipped",
+                    account_id=str(account.id),
+                    provider=account.broker,
+                    error=exc.message,
+                )
+            except Exception as exc:  # noqa: BLE001 - one venue must not stop the cycle
+                failures += 1
+                logger.warning(
+                    "broker_reconcile_failed",
+                    account_id=str(account.id),
+                    provider=account.broker,
+                    error=str(exc),
+                )
+            finally:
+                if broker is not None and hasattr(broker, "aclose"):
+                    await broker.aclose()
+
+    if ctx.get("redis") is not None:
+        await write_heartbeat(ctx["redis"], settings)
+    if synced or fills or failures:
+        logger.info(
+            "worker_job_done",
+            job="broker_reconcile",
+            accounts=synced,
+            fills=fills,
+            positions=positions,
+            skipped=skipped,
+            failures=failures,
+        )
+    return {
+        "job": "broker_reconcile",
+        "accounts": synced,
+        "fills": fills,
+        "positions": positions,
+        "skipped": skipped,
+        "failures": failures,
     }
 
 

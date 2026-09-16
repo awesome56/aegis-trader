@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     # --- Worker / scheduler (Track C) ----------------------------------------
     WORKER_ENABLED: bool = True
     WORKER_OPEN_ORDER_INTERVAL_SECONDS: int = 10
+    # Real venues fill asynchronously, so the local order/position mirror is
+    # polled on this cadence (paper fills synchronously and is excluded).
+    WORKER_BROKER_RECONCILE_INTERVAL_SECONDS: int = 30
     WORKER_PORTFOLIO_SNAPSHOT_INTERVAL_SECONDS: int = 300
     WORKER_STRATEGY_EVALUATION_INTERVAL_SECONDS: int = 60
     WORKER_LOCK_TTL_SECONDS: int = 60

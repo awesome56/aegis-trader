@@ -17,6 +17,7 @@ import pytest
 from app.brokers.alpaca import mapping
 from app.brokers.alpaca.adapter import AlpacaBrokerAdapter
 from app.brokers.alpaca.client import ALPACA_TRADING_BASE_URLS, AlpacaClient
+from app.brokers.bootstrap import ensure_account_portfolio
 from app.brokers.exceptions import (
     BrokerAuthenticationError,
     BrokerConfigurationError,
@@ -24,7 +25,6 @@ from app.brokers.exceptions import (
     BrokerUnavailableError,
     InsufficientFundsError,
 )
-from app.brokers.types import BrokerOrderRequest
 from app.models.broker import BrokerAccount
 from app.models.enums import (
     BrokerEnvironment,
@@ -34,6 +34,7 @@ from app.models.enums import (
     TimeInForce,
     TradeSide,
 )
+from app.repositories.position import PositionRepository
 
 from tests.brokers.conftest import broker_settings
 
@@ -297,7 +298,20 @@ async def test_client_returns_none_for_missing_position() -> None:
 
 
 # --- adapter ----------------------------------------------------------------
-async def test_adapter_reads_account_positions_quote_and_clock() -> None:
+async def _bound_adapter(db_session, handler, *, environment=BrokerEnvironment.DEMO):
+    """Persist an account + its portfolio and bind an adapter to a mock transport."""
+    account = _account(environment)
+    db_session.add(account)
+    await db_session.flush()
+    portfolio = await ensure_account_portfolio(db_session, account)
+    adapter = AlpacaBrokerAdapter(
+        db_session, account, portfolio, _client(handler, environment=environment),
+        settings=broker_settings(),
+    )
+    return adapter, account, portfolio
+
+
+async def test_adapter_reads_account_positions_quote_and_clock(db_session) -> None:
     now = datetime.now(UTC)
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -320,7 +334,7 @@ async def test_adapter_reads_account_positions_quote_and_clock() -> None:
             )
         return httpx.Response(404, json={"message": "unknown path"})
 
-    adapter = AlpacaBrokerAdapter(_account(), _client(handler), settings=broker_settings())
+    adapter, _, portfolio = await _bound_adapter(db_session, handler)
     try:
         state = await adapter.get_account()
         assert state.cash == Decimal("25000.55")
@@ -337,35 +351,44 @@ async def test_adapter_reads_account_positions_quote_and_clock() -> None:
 
         clock = await adapter.get_market_clock()
         assert clock.is_open is False
+
+        # Remote positions are mirrored into the account's own portfolio.
+        mirrored = await PositionRepository(db_session).list_open(portfolio.id)
+        assert [(p.symbol, p.quantity) for p in mirrored] == [("AAPL", Decimal("10"))]
     finally:
         await adapter.aclose()
 
 
-async def test_adapter_fails_closed_on_orders() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
-        return httpx.Response(200, json={})
+async def test_adapter_does_not_mirror_positions_into_the_default_portfolio(
+    db_session,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v2/positions":
+            return httpx.Response(200, json=[POSITION_PAYLOAD])
+        return httpx.Response(404, json={"message": "unknown path"})
 
-    adapter = AlpacaBrokerAdapter(_account(), _client(handler), settings=broker_settings())
+    adapter, _, portfolio = await _bound_adapter(db_session, handler)
     try:
-        request = BrokerOrderRequest(
-            symbol="AAPL", side=TradeSide.BUY, quantity=Decimal("1"), idempotency_key="k"
-        )
-        with pytest.raises(BrokerConfigurationError):
-            await adapter.submit_order(request)
-        with pytest.raises(BrokerConfigurationError):
-            await adapter.cancel_order(uuid.uuid4())
-        assert await adapter.process_open_orders() == []
+        await adapter.get_positions()
     finally:
         await adapter.aclose()
+    assert portfolio.is_default is False
+    assert portfolio.broker_account_id is not None
 
 
-def test_adapter_blocks_live_while_interlock_locked() -> None:
+async def test_adapter_blocks_live_while_interlock_locked(db_session) -> None:
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
         return httpx.Response(200, json=ACCOUNT_PAYLOAD)
 
+    account = _account(BrokerEnvironment.LIVE)
+    db_session.add(account)
+    await db_session.flush()
+    portfolio = await ensure_account_portfolio(db_session, account)
     with pytest.raises(BrokerConfigurationError):
         AlpacaBrokerAdapter(
-            _account(BrokerEnvironment.LIVE),
+            db_session,
+            account,
+            portfolio,
             _client(handler, environment=BrokerEnvironment.LIVE),
             settings=broker_settings(),
         )

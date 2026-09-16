@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.security import CredentialError, get_cipher
+from app.brokers.bootstrap import provision_account_for_connection
 from app.core.config import Settings, get_settings
 from app.core.exceptions import AegisError, ConflictError, NotFoundError, ValidationError
 from app.models.broker_connection import BrokerConnection
@@ -95,6 +96,9 @@ class BrokerConnectionService:
             status=ProviderStatus.UNTESTED,
         )
         await self._connections.add(connection)
+        await provision_account_for_connection(
+            self._session, user_id=user_id, connection=connection
+        )
         await self._audit(user_id, "broker.connection_configured", key, connection)
         return connection
 
@@ -149,20 +153,31 @@ class BrokerConnectionService:
         connection.is_default = True
         connection.updated_at = _dt.datetime.now(_dt.UTC)
         await self._session.flush()
+        await provision_account_for_connection(
+            self._session, user_id=user_id, connection=connection
+        )
         await self._audit(user_id, "broker.connection_activated", connection.provider, connection)
         return connection
 
     async def test(self, connection: BrokerConnection) -> tuple[bool, str, str | None]:
         """Return ``(ok, status, detail)``. Fail closed for unimplemented providers."""
         if connection.provider == "alpaca":
-            return await self._test_alpaca(connection)
-        if connection.provider in IMPLEMENTED_PROVIDERS:
-            return await self._record_test(
+            result = await self._test_alpaca(connection)
+        elif connection.provider in IMPLEMENTED_PROVIDERS:
+            result = await self._record_test(
                 connection, ok=True, detail="internal paper broker"
             )
-        return await self._record_test(
-            connection, ok=False, detail="provider adapter not implemented"
-        )
+        else:
+            result = await self._record_test(
+                connection, ok=False, detail="provider adapter not implemented"
+            )
+        if result[0]:
+            # A verified connection is what materialises the tradable account
+            # (and its portfolio).
+            await provision_account_for_connection(
+                self._session, user_id=connection.user_id, connection=connection
+            )
+        return result
 
     async def _record_test(
         self,

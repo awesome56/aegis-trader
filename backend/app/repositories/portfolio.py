@@ -29,6 +29,16 @@ class PortfolioRepository(BaseRepository[Portfolio]):
         result = await self.session.execute(stmt.limit(1))
         return result.scalar_one_or_none()
 
+    async def get_for_broker_account(self, broker_account_id: uuid.UUID) -> Portfolio | None:
+        stmt = (
+            select(Portfolio)
+            .where(Portfolio.broker_account_id == broker_account_id)
+            .order_by(Portfolio.created_at.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
 
 class PortfolioSnapshotRepository(BaseRepository[PortfolioSnapshot]):
     model = PortfolioSnapshot

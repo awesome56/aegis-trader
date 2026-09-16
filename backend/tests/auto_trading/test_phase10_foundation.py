@@ -16,6 +16,8 @@ from app.core.exceptions import ConflictError, ValidationError
 from app.models.broker import BrokerAccount
 from app.models.enums import AutoTradeAction, BrokerEnvironment, BrokerMode, ProviderStatus
 from app.models.user import User
+from app.repositories.broker_account import BrokerAccountRepository
+from app.repositories.portfolio import PortfolioRepository
 from httpx import AsyncClient
 
 RAW_KEY = "demo-broker-secret-9876"
@@ -109,16 +111,71 @@ async def test_alpaca_test_fails_closed_without_secret(db_session) -> None:
 
 
 async def test_unimplemented_provider_fails_closed(db_session) -> None:
-    user = await _user(db_session, "p10-alpaca@example.com")
+    user = await _user(db_session, "p10-oanda@example.com")
     service = BrokerConnectionService(db_session)
     row = await service.create(
         user_id=user.id,
-        provider="alpaca",
+        provider="oanda",
         environment=BrokerEnvironment.DEMO,
         api_key=RAW_KEY,
     )
     ok, status, _ = await service.test(row)
     assert ok is False and status == ProviderStatus.ERROR.value
+
+
+async def test_connection_provisions_account_and_own_portfolio(db_session) -> None:
+    user = await _user(db_session, "p10-provision@example.com")
+    service = BrokerConnectionService(db_session)
+    await service.create(
+        user_id=user.id,
+        provider="alpaca",
+        environment=BrokerEnvironment.DEMO,
+        api_key=RAW_KEY,
+        api_secret="secret",
+    )
+    accounts = BrokerAccountRepository(db_session)
+    account = await accounts.get_for_provider(
+        user.id, broker="alpaca", environment=BrokerEnvironment.DEMO
+    )
+    assert account is not None
+    assert account.mode is BrokerMode.PAPER
+    assert account.is_active is True
+
+    portfolio = await PortfolioRepository(db_session).get_for_broker_account(account.id)
+    assert portfolio is not None
+    # External accounts never share the paper portfolio the UI treats as default.
+    assert portfolio.is_default is False
+
+    # Idempotent: another connection for the same provider/env reuses the account.
+    await service.create(
+        user_id=user.id,
+        provider="alpaca",
+        environment=BrokerEnvironment.DEMO,
+        api_key=RAW_KEY,
+        api_secret="secret",
+    )
+    alpaca_accounts = [
+        row for row in await accounts.list_for_user(user.id) if row.broker == "alpaca"
+    ]
+    assert len(alpaca_accounts) == 1
+
+
+async def test_paper_connection_does_not_provision_a_second_account(db_session) -> None:
+    user = await _user(db_session, "p10-provision-paper@example.com")
+    await ensure_paper_account(db_session, user)
+    service = BrokerConnectionService(db_session)
+    await service.create(
+        user_id=user.id,
+        provider="paper",
+        environment=BrokerEnvironment.DEMO,
+        api_key=RAW_KEY,
+    )
+    paper_accounts = [
+        row
+        for row in await BrokerAccountRepository(db_session).list_for_user(user.id)
+        if row.broker == "paper"
+    ]
+    assert len(paper_accounts) == 1
 
 
 # --- policy -----------------------------------------------------------------

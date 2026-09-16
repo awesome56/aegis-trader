@@ -9,7 +9,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.brokers.base import BrokerAdapter
-from app.brokers.bootstrap import ensure_paper_account
+from app.brokers.bootstrap import ensure_account_portfolio, ensure_paper_account
 from app.brokers.exceptions import BrokerConfigurationError
 from app.core.config import Settings, get_settings
 from app.market.services.market_data import MarketDataService
@@ -78,7 +78,10 @@ class BrokerRouter:
             client = AlpacaClient(
                 api_key=api_key, api_secret=api_secret, environment=account.environment
             )
-            return AlpacaBrokerAdapter(account, client, settings=self._settings)
+            portfolio = await ensure_account_portfolio(self._session, account)
+            return AlpacaBrokerAdapter(
+                self._session, account, portfolio, client, settings=self._settings
+            )
 
         # No silent fallback to paper for external providers.
         raise BrokerConfigurationError(

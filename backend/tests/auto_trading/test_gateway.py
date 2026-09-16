@@ -213,3 +213,73 @@ async def test_asset_class_restriction(db_session, symbol: str) -> None:
     )
     assert result.status == "REJECTED"
     assert result.reason == "ASSET_CLASS_NOT_ALLOWED"
+
+
+async def test_replace_order_cancels_then_resubmits(db_session) -> None:
+    from app.brokers.router import BrokerRouter
+    from app.models.enums import OrderStatus, OrderType
+
+    user, account, _ = await _setup(db_session, "gw-replace@example.com")
+    settings = get_settings().model_copy(update={"EXECUTION_MAX_PRICE_DEVIATION_BPS": 0.0})
+    service = AutoTradingPolicyService(db_session, settings)
+    policy = await service.get_or_create(user.id, account)
+    await service.update(
+        policy, allow_replace=True, allow_open=True, allow_manage_manual_orders=True
+    )
+
+    gateway = BrokerSafetyGateway(db_session, user, settings)
+    # Original resting BUY LIMIT (below market) with protective context.
+    opened = await gateway.execute(
+        account=account,
+        action=AutoTradeAction.OPEN,
+        symbol="AAPL",
+        side=TradeSide.BUY,
+        order_type=OrderType.LIMIT,
+        quantity=Decimal("1"),
+        limit_price=Decimal("50"),
+        stop_loss=Decimal("40"),
+        take_profit=Decimal("70"),
+        confidence=Decimal("0.9"),
+        idempotency_key="gw-repl-open",
+    )
+    assert opened.status == "EXECUTED", opened.reason
+
+    result = await gateway.replace_order(
+        account=account, order_id=opened.order_id, limit_price=Decimal("49")
+    )
+    assert result.status == "EXECUTED", result.reason
+    assert result.order_id is not None and result.order_id != opened.order_id
+
+    broker = await BrokerRouter(db_session, settings).route(user=user, account=account)
+    original = await broker.get_order(opened.order_id)
+    assert original.status is OrderStatus.CANCELLED
+    working = [
+        o
+        for o in await broker.get_orders(limit=50)
+        if o.status
+        not in (OrderStatus.CANCELLED, OrderStatus.FILLED, OrderStatus.REJECTED, OrderStatus.FAILED)
+    ]
+    assert len(working) <= 1
+
+
+async def test_replace_requires_permission(db_session) -> None:
+    from app.brokers.router import BrokerRouter
+    from app.brokers.types import BrokerOrderRequest
+    from app.models.enums import OrderType
+
+    user, account, _ = await _setup(db_session, "gw-replace-denied@example.com")
+    broker = await BrokerRouter(db_session, get_settings()).route(user=user, account=account)
+    submitted = await broker.submit_order(
+        BrokerOrderRequest(
+            symbol="AAPL",
+            side=TradeSide.BUY,
+            order_type=OrderType.LIMIT,
+            quantity=Decimal("1"),
+            limit_price=Decimal("1"),
+            idempotency_key="gw-repl-2",
+        )
+    )
+    gateway = BrokerSafetyGateway(db_session, user, get_settings())
+    result = await gateway.replace_order(account=account, order_id=submitted.order_id)
+    assert result.status == "REJECTED"
+    assert result.reason == "ACTION_NOT_PERMITTED:REPLACE_ORDER"

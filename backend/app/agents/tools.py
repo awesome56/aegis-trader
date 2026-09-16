@@ -46,6 +46,7 @@ BROKER_WRITE_TOOL_ACTIONS = {
     "broker_reduce_position": "REDUCE",
     "broker_close_position": "CLOSE",
     "broker_cancel_order": "CANCEL_ORDER",
+    "broker_replace_order": "REPLACE_ORDER",
 }
 READ_TOOLS = (
     "get_market_context",
@@ -627,6 +628,20 @@ class AgentToolRegistry:
         account = await self._broker_account()
         result = await self._gateway().cancel_order(
             account=account, order_id=uuid.UUID(str(order_id))
+        )
+        return result.as_dict()
+
+    async def _tool_broker_replace_order(self, args, *, idempotency_key=None):  # noqa: ANN001
+        order_id = args.get("order_id")
+        if not order_id:
+            raise ValidationError("order_id is required to replace")
+        account = await self._broker_account()
+        result = await self._gateway().replace_order(
+            account=account,
+            order_id=uuid.UUID(str(order_id)),
+            limit_price=_decimal(args.get("limit_price")),
+            stop_price=_decimal(args.get("stop_price")),
+            quantity=_decimal(args.get("quantity")),
         )
         return result.as_dict()
 

@@ -35,6 +35,7 @@ from app.models.enums import (
     TradeSide,
     TradingState,
 )
+from app.models.proposal import TradeProposal
 from app.models.user import User
 from app.notifications.service import NotificationService
 from app.proposals.order_manager import OrderManager
@@ -398,6 +399,143 @@ class BrokerSafetyGateway:
             environment=account.environment.value,
             order_id=order_id,
             reason=None if result.status is OrderStatus.CANCELLED else result.status.value,
+        )
+
+    async def replace_order(
+        self,
+        *,
+        account: BrokerAccount,
+        order_id: uuid.UUID,
+        limit_price: Decimal | None = None,
+        stop_price: Decimal | None = None,
+        quantity: Decimal | None = None,
+        actor: str = "agent",
+    ) -> GatewayResult:
+        """Replace = validate → cancel existing → (only if cancelled) submit new.
+
+        Never produces duplicate exposure: the replacement is submitted only
+        after the original is confirmed cancelled.
+        """
+        policy = await self._policies.get_or_create(self._user.id, account)
+        permitted, why = self._policies.permits(policy, AutoTradeAction.REPLACE_ORDER)
+        if not permitted:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=str(order_id),
+                environment=account.environment.value,
+                reason=why or "NOT_PERMITTED",
+            )
+        state = await TradingStateService(self._session, settings=self._settings).get_or_create()
+        if state.trading_state is not TradingState.TRADING_ENABLED:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=str(order_id),
+                environment=account.environment.value,
+                reason="TRADING_STATE",
+            )
+
+        order = await OrderRepository(self._session).get(order_id)
+        terminal = (
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REJECTED,
+            OrderStatus.FAILED,
+        )
+        if order is None or order.broker_account_id != account.id or order.status in terminal:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=str(order_id),
+                environment=account.environment.value,
+                reason="ORDER_NOT_REPLACEABLE",
+            )
+        if not policy.allow_manage_manual_orders and order.proposal_id is None:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=order.symbol,
+                environment=account.environment.value,
+                reason="MANUAL_ORDER_NOT_MANAGED",
+            )
+
+        # Cancel the original directly (governed by the replace permission, not
+        # the cancel permission). Do not submit the replacement if cancel fails.
+        broker = await BrokerRouter(self._session, self._settings).route(
+            user=self._user, account=account
+        )
+        try:
+            cancelled = await broker.cancel_order(order_id)
+        except AegisError as exc:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=order.symbol,
+                environment=account.environment.value,
+                reason=f"CANCEL_FAILED:{exc.code}",
+            )
+        if cancelled.status is not OrderStatus.CANCELLED:
+            return GatewayResult(
+                status="REJECTED",
+                action=AutoTradeAction.REPLACE_ORDER,
+                symbol=order.symbol,
+                environment=account.environment.value,
+                reason=f"CANCEL_FAILED:{cancelled.status.value}",
+            )
+
+        # Preserve the original proposal's protective context so the
+        # replacement passes the same deterministic risk rules.
+        stop_loss = None
+        take_profit = None
+        confidence = Decimal("0.5")
+        strategy_signal_id = None
+        if order.proposal_id is not None:
+            original_proposal = await self._session.get(TradeProposal, order.proposal_id)
+            if original_proposal is not None:
+                stop_loss = original_proposal.stop_loss
+                take_profit = original_proposal.take_profit
+                confidence = original_proposal.confidence
+                strategy_signal_id = original_proposal.strategy_signal_id
+
+        replacement = await self.execute(
+            account=account,
+            action=AutoTradeAction.OPEN,
+            symbol=order.symbol,
+            side=order.side,
+            order_type=order.order_type,
+            quantity=quantity or Decimal(str(order.quantity)),
+            limit_price=limit_price or order.limit_price,
+            stop_price=stop_price or order.stop_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            strategy_signal_id=strategy_signal_id,
+            confidence=confidence,
+            reason=f"replace order {order_id}",
+            idempotency_key=f"replace:{order_id}:{limit_price}:{quantity}",
+            actor=actor,
+        )
+        await SystemEventRepository(self._session).record(
+            event_type="agent.order_replaced",
+            source="auto_trading",
+            message=f"Agent replaced order {order_id} -> {replacement.status}",
+            severity=NotificationSeverity.INFO,
+            actor=str(self._user.id),
+            payload={
+                "previous_order_id": str(order_id),
+                "status": replacement.status,
+                "environment": account.environment.value,
+            },
+        )
+        return GatewayResult(
+            status=replacement.status,
+            action=AutoTradeAction.REPLACE_ORDER,
+            symbol=order.symbol,
+            environment=account.environment.value,
+            approved_quantity=replacement.approved_quantity,
+            order_id=replacement.order_id,
+            risk_evaluation_id=replacement.risk_evaluation_id,
+            reason=replacement.reason,
         )
 
     # --- helpers ------------------------------------------------------------

@@ -1,8 +1,10 @@
 """Broker provider selection.
 
-V1 supports only the paper broker. Any real provider is refused unless the full
-live-trading interlock is satisfied — configuration never silently falls back to
-paper mode.
+This is the *global* ``BROKER_PROVIDER`` switch, which still only accepts the
+internal paper broker: pointing the whole deployment at a live venue is refused
+unless the full live-trading interlock is satisfied, and configuration never
+silently falls back to paper mode. Per-account external routing (Phase 10)
+happens in :mod:`app.brokers.router` instead.
 """
 
 from __future__ import annotations

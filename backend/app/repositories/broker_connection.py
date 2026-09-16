@@ -47,6 +47,23 @@ class BrokerConnectionRepository(BaseRepository[BrokerConnection]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_default_for_provider(
+        self, user_id: uuid.UUID, provider: str, environment: BrokerEnvironment
+    ) -> BrokerConnection | None:
+        stmt = (
+            select(BrokerConnection)
+            .where(
+                BrokerConnection.user_id == user_id,
+                BrokerConnection.provider == provider,
+                BrokerConnection.environment == environment,
+                BrokerConnection.enabled.is_(True),
+            )
+            .order_by(BrokerConnection.is_default.desc(), BrokerConnection.created_at.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def clear_defaults(self, user_id: uuid.UUID, environment: BrokerEnvironment) -> None:
         await self.session.execute(
             update(BrokerConnection)

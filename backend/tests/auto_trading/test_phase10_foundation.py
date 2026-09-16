@@ -62,6 +62,52 @@ async def test_live_connection_requires_server_interlock(db_session) -> None:
         )
 
 
+async def test_alpaca_connection_test_reaches_provider_with_stored_credentials(
+    db_session, monkeypatch
+) -> None:
+    user = await _user(db_session, "p10-alpaca-ok@example.com")
+    service = BrokerConnectionService(db_session)
+    row = await service.create(
+        user_id=user.id,
+        provider="alpaca",
+        environment=BrokerEnvironment.DEMO,
+        api_key=RAW_KEY,
+        api_secret="super-secret",
+    )
+    captured: dict[str, object] = {}
+
+    class FakeAlpacaClient:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+        async def get_account(self) -> dict[str, str]:
+            return {"account_number": "PA3OK"}
+
+        async def aclose(self) -> None:
+            captured["closed"] = True
+
+    monkeypatch.setattr("app.brokers.alpaca.client.AlpacaClient", FakeAlpacaClient)
+    ok, status, _ = await service.test(row)
+    assert ok is True and status == ProviderStatus.CONNECTED.value
+    assert row.account_external_id == "PA3OK"
+    assert captured["api_key"] == RAW_KEY
+    assert captured["api_secret"] == "super-secret"
+    assert captured["closed"] is True
+
+
+async def test_alpaca_test_fails_closed_without_secret(db_session) -> None:
+    user = await _user(db_session, "p10-alpaca-nosecret@example.com")
+    service = BrokerConnectionService(db_session)
+    row = await service.create(
+        user_id=user.id,
+        provider="alpaca",
+        environment=BrokerEnvironment.DEMO,
+        api_key=RAW_KEY,
+    )
+    ok, status, _ = await service.test(row)
+    assert ok is False and status == ProviderStatus.ERROR.value
+
+
 async def test_unimplemented_provider_fails_closed(db_session) -> None:
     user = await _user(db_session, "p10-alpaca@example.com")
     service = BrokerConnectionService(db_session)

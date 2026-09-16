@@ -1,9 +1,9 @@
 """Broker connection service (Phase 10).
 
 Encrypted credential storage with masked display; raw secrets are never
-returned. External provider adapters are not implemented yet, so Test
-Connection reports a normalized ERROR for them (fail closed) while the internal
-paper provider reports CONNECTED.
+returned. Test Connection calls the provider when an adapter exists (currently
+paper and Alpaca) and otherwise reports a normalized ERROR — it never reports
+success for a provider it has not really reached.
 """
 
 from __future__ import annotations
@@ -15,14 +15,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.security import CredentialError, get_cipher
 from app.core.config import Settings, get_settings
-from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.exceptions import AegisError, ConflictError, NotFoundError, ValidationError
 from app.models.broker_connection import BrokerConnection
 from app.models.enums import BrokerEnvironment, NotificationSeverity, ProviderStatus
 from app.repositories.broker_connection import BrokerConnectionRepository
 from app.repositories.notification import SystemEventRepository
 
-# Providers Aegis can name. Only "paper" is implemented; others require a future
-# adapter and currently fail closed on connection test.
+# Providers Aegis can name. "paper" is fully implemented; "alpaca" has a real
+# adapter (read-side: account/positions/quotes/clock - order routing is still
+# fail-closed). Anything else reports ERROR on connection test rather than
+# pretending to be reachable.
 PROVIDER_CATALOG: dict[str, set[BrokerEnvironment]] = {
     "paper": {BrokerEnvironment.DEMO},
     "alpaca": {BrokerEnvironment.DEMO, BrokerEnvironment.LIVE},
@@ -152,25 +154,77 @@ class BrokerConnectionService:
 
     async def test(self, connection: BrokerConnection) -> tuple[bool, str, str | None]:
         """Return ``(ok, status, detail)``. Fail closed for unimplemented providers."""
+        if connection.provider == "alpaca":
+            return await self._test_alpaca(connection)
         if connection.provider in IMPLEMENTED_PROVIDERS:
-            connection.status = ProviderStatus.CONNECTED
-            connection.last_tested_at = _dt.datetime.now(_dt.UTC)
-            connection.last_error = None
-            connection.updated_at = connection.last_tested_at
-            await self._session.flush()
-            return True, ProviderStatus.CONNECTED.value, "internal paper broker"
-        connection.status = ProviderStatus.ERROR
-        connection.last_tested_at = _dt.datetime.now(_dt.UTC)
-        connection.last_error = "provider adapter not implemented"
-        connection.updated_at = connection.last_tested_at
+            return await self._record_test(
+                connection, ok=True, detail="internal paper broker"
+            )
+        return await self._record_test(
+            connection, ok=False, detail="provider adapter not implemented"
+        )
+
+    async def _record_test(
+        self,
+        connection: BrokerConnection,
+        *,
+        ok: bool,
+        detail: str,
+        error: str | None = None,
+    ) -> tuple[bool, str, str | None]:
+        now = _dt.datetime.now(_dt.UTC)
+        connection.status = ProviderStatus.CONNECTED if ok else ProviderStatus.ERROR
+        connection.last_tested_at = now
+        connection.last_error = None if ok else (error or detail)
+        connection.updated_at = now
         await self._session.flush()
-        return False, ProviderStatus.ERROR.value, "provider adapter not implemented"
+        return ok, connection.status.value, detail
+
+    async def _test_alpaca(self, connection: BrokerConnection) -> tuple[bool, str, str | None]:
+        """Reach the real Alpaca endpoint with the stored credentials."""
+        from app.brokers.alpaca.client import AlpacaClient
+
+        api_key = self.decrypt_api_key(connection)
+        api_secret = self.decrypt_api_secret(connection)
+        if not api_key or not api_secret:
+            return await self._record_test(
+                connection,
+                ok=False,
+                detail="missing Alpaca API key/secret",
+                error="missing Alpaca API key/secret",
+            )
+        client = AlpacaClient(
+            api_key=api_key, api_secret=api_secret, environment=connection.environment
+        )
+        try:
+            account = await client.get_account()
+        except AegisError as exc:
+            return await self._record_test(
+                connection, ok=False, detail=exc.message, error=exc.message
+            )
+        finally:
+            await client.aclose()
+        external = account.get("account_number") if isinstance(account, dict) else None
+        if external:
+            connection.account_external_id = str(external)
+        return await self._record_test(
+            connection, ok=True, detail=f"Alpaca account {external or 'verified'}"
+        )
 
     def decrypt_api_key(self, connection: BrokerConnection) -> str | None:
-        if not connection.encrypted_api_key:
+        return self._decrypt(connection.encrypted_api_key)
+
+    def decrypt_api_secret(self, connection: BrokerConnection) -> str | None:
+        return self._decrypt(connection.encrypted_api_secret)
+
+    def decrypt_access_token(self, connection: BrokerConnection) -> str | None:
+        return self._decrypt(connection.encrypted_access_token)
+
+    def _decrypt(self, encrypted: str | None) -> str | None:
+        if not encrypted:
             return None
         try:
-            return get_cipher(self._settings).decrypt(connection.encrypted_api_key)
+            return get_cipher(self._settings).decrypt(encrypted)
         except CredentialError:
             return None
 

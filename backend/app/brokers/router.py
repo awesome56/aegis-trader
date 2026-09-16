@@ -53,6 +53,33 @@ class BrokerRouter:
             return PaperBrokerAdapter(
                 self._session, paper_account, portfolio, market, settings=self._settings
             )
+        if provider == "alpaca":
+            from app.brokers.alpaca.adapter import AlpacaBrokerAdapter
+            from app.brokers.alpaca.client import AlpacaClient
+            from app.brokers.connections import BrokerConnectionService
+            from app.repositories.broker_connection import BrokerConnectionRepository
+
+            connection = await BrokerConnectionRepository(
+                self._session
+            ).get_default_for_provider(user.id, provider, account.environment)
+            if connection is None:
+                raise BrokerConfigurationError(
+                    "no enabled Alpaca connection for this environment",
+                    details={"provider": provider, "environment": account.environment.value},
+                )
+            service = BrokerConnectionService(self._session, self._settings)
+            api_key = service.decrypt_api_key(connection)
+            api_secret = service.decrypt_api_secret(connection)
+            if not api_key or not api_secret:
+                raise BrokerConfigurationError(
+                    "Alpaca connection is missing credentials",
+                    details={"provider": provider},
+                )
+            client = AlpacaClient(
+                api_key=api_key, api_secret=api_secret, environment=account.environment
+            )
+            return AlpacaBrokerAdapter(account, client, settings=self._settings)
+
         # No silent fallback to paper for external providers.
         raise BrokerConfigurationError(
             f"broker adapter for provider {provider!r} is not implemented",

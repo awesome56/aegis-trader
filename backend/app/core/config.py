@@ -141,6 +141,13 @@ class Settings(BaseSettings):
     TWELVE_DATA_BASE_URL: str = "https://api.twelvedata.com"
     # Kraken public market data (crypto, keyless)
     KRAKEN_BASE_URL: str = "https://api.kraken.com"
+    # Alpaca market data (US equities). Requires an Alpaca key pair; the free
+    # IEX feed is real-time and the quota is far larger than Twelve Data's free
+    # tier. Using the same venue that executes keeps risk and fills consistent.
+    ALPACA_DATA_API_KEY: str = ""
+    ALPACA_DATA_API_SECRET: str = ""
+    ALPACA_DATA_BASE_URL: str = "https://data.alpaca.markets"
+    ALPACA_DATA_FEED: str = "iex"
     # Composite provider: per-asset-class routing
     MARKET_EQUITY_PROVIDER: str = "mock"
     MARKET_CRYPTO_PROVIDER: str = "kraken"

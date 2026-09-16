@@ -8,6 +8,7 @@ from collections.abc import Callable
 
 from app.core.config import Settings, get_settings
 from app.market.exceptions import ProviderUnavailableError
+from app.market.providers.alpaca import AlpacaMarketDataProvider
 from app.market.providers.base import MarketDataProvider
 from app.market.providers.composite import CompositeMarketDataProvider
 from app.market.providers.csv import CsvMarketDataProvider
@@ -20,6 +21,7 @@ _PROVIDER_FACTORIES: dict[str, Callable[[Settings], MarketDataProvider]] = {
     CsvMarketDataProvider.name: CsvMarketDataProvider,
     TwelveDataProvider.name: TwelveDataProvider,
     KrakenProvider.name: KrakenProvider,
+    AlpacaMarketDataProvider.name: AlpacaMarketDataProvider,
     CompositeMarketDataProvider.name: CompositeMarketDataProvider,
 }
 

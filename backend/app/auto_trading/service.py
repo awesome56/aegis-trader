@@ -10,7 +10,6 @@ from __future__ import annotations
 import datetime as _dt
 import uuid
 
-from app.agents.enums import AgentRunMode
 from app.core.config import Settings, get_settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.auto_trading import AutoTradingPolicy
@@ -168,9 +167,6 @@ class AutoTradingPolicyService:
             if symbol.upper() not in {str(s).upper() for s in policy.allowed_symbols}:
                 return False, "SYMBOL_NOT_ALLOWED"
         return True, None
-
-    def agent_mode(self, policy: AutoTradingPolicy | None) -> AgentRunMode:
-        return AgentRunMode.PROPOSE if policy is None else AgentRunMode.PROPOSE
 
     async def _audit(
         self,

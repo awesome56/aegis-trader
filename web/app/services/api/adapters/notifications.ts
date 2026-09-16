@@ -1,6 +1,6 @@
 import type { Notification, NotificationPage, NotificationSeverity } from '~/types/notifications'
 import { resourceLinkFromPayload } from '~/utils/resourceLinks'
-import { iso, isoOrNull } from './common'
+import { iso, isoOrNull, normalizeEnvironment } from './common'
 import type { RawNotification, RawNotificationPage } from './raw'
 
 export function toNotification(raw: RawNotification): Notification {
@@ -15,6 +15,7 @@ export function toNotification(raw: RawNotification): Notification {
     payload: raw.payload,
     created_at: iso(raw.created_at),
     link: resourceLinkFromPayload(raw.payload),
+    environment: normalizeEnvironment(raw.payload),
   }
 }
 

@@ -23,6 +23,7 @@ import {
   toQuote,
   toRiskLimits,
   toRiskStatus,
+  toActivityEvent,
   toActivityPage,
   toNotification,
   toNotificationPage,
@@ -737,5 +738,46 @@ describe('adapters', () => {
     expect(data.recent_proposals).toHaveLength(1)
     expect(data.strategy_signals).toHaveLength(1)
     expect(data.equity_history).toHaveLength(2)
+  })
+
+  it('labels activity and notifications with the account environment', () => {
+    const demo = toActivityEvent({
+      id: 'e-1',
+      event_type: 'agent.order_replaced',
+      severity: 'INFO',
+      source: 'auto_trading',
+      message: 'replaced',
+      actor: null,
+      correlation_id: null,
+      payload: { environment: 'DEMO' },
+      occurred_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(demo.environment).toBe('DEMO')
+
+    const live = toNotification({
+      id: 'n-live',
+      category: 'TRADING',
+      severity: 'INFO',
+      title: 'Live',
+      message: 'live',
+      is_read: false,
+      read_at: null,
+      payload: { account_environment: 'LIVE' },
+      created_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(live.environment).toBe('LIVE')
+
+    const none = toNotification({
+      id: 'n-none',
+      category: 'SYSTEM',
+      severity: 'INFO',
+      title: 'None',
+      message: 'none',
+      is_read: false,
+      read_at: null,
+      payload: { note: 'x' },
+      created_at: '2026-01-15T15:00:00+00:00',
+    })
+    expect(none.environment).toBeNull()
   })
 })

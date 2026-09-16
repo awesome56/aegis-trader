@@ -101,6 +101,7 @@ function metadataRows(data: Record<string, unknown> | null): { key: string; valu
               <th class="pb-2 font-medium">Time</th>
               <th class="pb-2 font-medium">Component</th>
               <th class="pb-2 font-medium">Severity</th>
+              <th class="pb-2 font-medium">Env</th>
               <th class="pb-2 font-medium">Event</th>
               <th class="pb-2 font-medium">Symbol</th>
               <th class="pb-2 font-medium">Message</th>
@@ -117,6 +118,10 @@ function metadataRows(data: Record<string, unknown> | null): { key: string; valu
                     :label="event.severity"
                     :tone="event.severity === 'CRITICAL' ? 'danger' : event.severity === 'WARNING' ? 'warning' : 'info'"
                   />
+                </td>
+                <td class="py-2">
+                  <EnvironmentBadge :environment="event.environment" />
+                  <span v-if="!event.environment" class="text-muted">—</span>
                 </td>
                 <td class="num py-2 text-muted">{{ event.event_type }}</td>
                 <td class="py-2">
@@ -140,7 +145,7 @@ function metadataRows(data: Record<string, unknown> | null): { key: string; valu
                 </td>
               </tr>
               <tr v-if="expanded[event.id]" class="border-t border-default">
-                <td colspan="7" class="bg-elevated/10 p-3">
+                <td colspan="8" class="bg-elevated/10 p-3">
                   <table v-if="metadataRows(event.data).length" class="w-full max-w-lg text-left text-[11px]">
                     <tbody>
                       <tr v-for="row in metadataRows(event.data)" :key="row.key" class="border-t border-default first:border-t-0">

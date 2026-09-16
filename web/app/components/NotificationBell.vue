@@ -93,6 +93,7 @@ function onSelect(id: string): void {
               <p class="mt-0.5 text-[11px] text-muted">{{ item.message }}</p>
               <div class="mt-1 flex items-center gap-2">
                 <StatusBadge :label="item.category" :tone="tone[item.severity]" />
+                <EnvironmentBadge :environment="item.environment" />
                 <span class="text-[10px] text-dimmed">{{ formatRelative(item.created_at) }}</span>
               </div>
             </component>

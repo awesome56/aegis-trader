@@ -16,4 +16,6 @@ export interface ActivityEvent {
   occurred_at: ISODateString
   /** Resource link derived from structured payload metadata. */
   link?: string
+  /** Account environment when the event originated from a broker account. */
+  environment?: 'DEMO' | 'LIVE' | null
 }

@@ -1,7 +1,7 @@
 import type { ActivityEvent, ActivitySeverity } from '~/types/activity'
 import type { Paginated } from '~/types/api'
 import { resourceLinkFromPayload } from '~/utils/resourceLinks'
-import { iso } from './common'
+import { iso, normalizeEnvironment } from './common'
 import type { RawActivityEvent, RawActivityPage } from './raw'
 
 export function toActivityEvent(raw: RawActivityEvent): ActivityEvent {
@@ -17,6 +17,7 @@ export function toActivityEvent(raw: RawActivityEvent): ActivityEvent {
     data: raw.payload,
     occurred_at: iso(raw.occurred_at),
     link: resourceLinkFromPayload(raw.payload),
+    environment: normalizeEnvironment(raw.payload),
   }
 }
 

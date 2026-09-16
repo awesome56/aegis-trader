@@ -23,6 +23,8 @@ export interface Notification {
   created_at: ISODateString
   /** Resource link derived from structured payload metadata (never parsed text). */
   link?: string
+  /** Account environment when the notification originated from a broker account. */
+  environment?: 'DEMO' | 'LIVE' | null
 }
 
 export interface NotificationPage {

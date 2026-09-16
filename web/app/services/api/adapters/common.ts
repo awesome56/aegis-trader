@@ -27,3 +27,13 @@ export function secondsBetween(start: string | null, end: string | null): number
   const elapsed = Math.floor((Date.parse(end) - Date.parse(start)) / 1000)
   return Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : null
 }
+
+export type Environment = 'DEMO' | 'LIVE'
+
+/** Derive an account environment (DEMO/LIVE) from structured event payload metadata. */
+export function normalizeEnvironment(
+  payload: Record<string, unknown> | null | undefined,
+): Environment | null {
+  const raw = payload?.environment ?? payload?.account_environment
+  return raw === 'DEMO' || raw === 'LIVE' ? raw : null
+}

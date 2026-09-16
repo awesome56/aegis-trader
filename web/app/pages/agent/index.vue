@@ -7,6 +7,7 @@ import {
   useAgentStatus,
   useCreateAgentRun,
 } from '~/composables/useAgent'
+import { useAutoTradingStatus } from '~/composables/useAutoTrading'
 import { formatDateTime } from '~/utils/dates'
 import { formatPercentage } from '~/utils/percentage'
 
@@ -16,6 +17,13 @@ const statusQuery = useAgentStatus()
 const runsQuery = useAgentRuns({ page: 1, pageSize: 10 })
 const decisionsQuery = useAgentDecisions({ page: 1, pageSize: 10 })
 const createRun = useCreateAgentRun()
+const autoTrading = useAutoTradingStatus()
+const enabledAccount = computed(
+  () => autoTrading.data.value?.accounts.find((account) => account.enabled) ?? null,
+)
+const autoTradeUnavailable = computed(
+  () => form.mode === 'AUTO_TRADE' && enabledAccount.value === null,
+)
 
 const status = computed(() => statusQuery.data.value ?? null)
 const runs = computed(() => runsQuery.data.value?.items ?? [])
@@ -52,10 +60,16 @@ async function runAnalysis(): Promise<void> {
     return
   }
   try {
+    if (form.mode === 'AUTO_TRADE' && enabledAccount.value === null) {
+      errorMessage.value = 'Auto Trading is not enabled for this account.'
+      return
+    }
     const run = await createRun.mutateAsync({
       symbol: form.symbol.trim().toUpperCase(),
       timeframe: form.timeframe,
       mode: form.mode,
+      broker_account_id:
+        form.mode === 'AUTO_TRADE' ? (enabledAccount.value?.broker_account_id ?? undefined) : undefined,
       prompt: form.prompt?.trim() || undefined,
     })
     activeRunId.value = run.id
@@ -144,17 +158,22 @@ function evidenceRows(data: Record<string, unknown> | undefined): { key: string;
             <select id="agent-mode" v-model="form.mode" class="rounded border border-default bg-elevated/40 px-2 py-1.5 text-xs text-default">
               <option value="ANALYSIS_ONLY">Analysis Only</option>
               <option value="PROPOSE">Propose Trade</option>
+              <option value="AUTO_TRADE">Auto Trade (DEMO/LIVE policy)</option>
             </select>
           </div>
           <div class="min-w-48 flex-1">
             <label class="mb-1 block text-[11px] text-muted" for="agent-prompt">Question (optional)</label>
             <UInput id="agent-prompt" v-model="form.prompt" placeholder="Look for a potential opportunity…" class="w-full" />
           </div>
-          <UButton color="primary" size="sm" icon="i-lucide-sparkles" :disabled="!providerConfigured" :loading="createRun.isPending.value" @click="runAnalysis">
+          <UButton color="primary" size="sm" icon="i-lucide-sparkles" :disabled="!providerConfigured || autoTradeUnavailable" :loading="createRun.isPending.value" @click="runAnalysis">
             Run analysis
           </UButton>
         </div>
+        <div v-if="autoTradeUnavailable" class="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          Auto Trading is not enabled for this account. Enable it in Settings → Trading.
+        </div>
         <p class="mt-2 text-[11px] text-muted">
+          <strong>Auto Trade</strong> lets the agent act through the safety gateway when the account policy permits it.
           <strong>Analysis Only</strong> returns structured analysis and never creates a proposal.
           <strong>Propose Trade</strong> may create one DRAFT proposal which still requires manual risk evaluation and execution.
         </p>

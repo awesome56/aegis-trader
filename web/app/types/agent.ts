@@ -165,7 +165,7 @@ export interface ProposalCreateInput {
 
 // --- Phase 9: TradingAnalysisAgent -----------------------------------------
 
-export type AgentMode = 'ANALYSIS_ONLY' | 'PROPOSE'
+export type AgentMode = 'ANALYSIS_ONLY' | 'PROPOSE' | 'AUTO_TRADE'
 
 export type AgentRunStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
 
@@ -229,5 +229,6 @@ export interface AnalyzeInput {
   timeframe: string
   mode: AgentMode
   provider_config_id?: string
+  broker_account_id?: string
   prompt?: string
 }

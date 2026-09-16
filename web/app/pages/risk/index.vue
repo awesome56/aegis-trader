@@ -4,6 +4,7 @@ import { formatCurrency } from '~/utils/currency'
 import { formatDateTime } from '~/utils/dates'
 import { formatPercentage } from '~/utils/percentage'
 import { formatPnL } from '~/utils/pnl'
+import { useAutoTradingStatus } from '~/composables/useAutoTrading'
 
 useHead({ title: 'Risk' })
 
@@ -17,6 +18,9 @@ const status = computed(() => statusQuery.data.value ?? null)
 const limits = computed(() => limitsQuery.data.value ?? [])
 const events = computed(() => eventsQuery.data.value?.items ?? [])
 const tradingState = computed(() => tradingQuery.data.value?.trading_state ?? 'TRADING_ENABLED')
+const autoTrading = useAutoTradingStatus()
+const demoAuto = computed(() => autoTrading.data.value?.demo_any_enabled ?? false)
+const liveAuto = computed(() => autoTrading.data.value?.live_any_enabled ?? false)
 
 const riskMetrics = computed(() => {
   const s = status.value
@@ -127,6 +131,14 @@ async function runAction(): Promise<void> {
         </UButton>
       </template>
     </PageHeader>
+
+    <section class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-default bg-elevated/20 px-3 py-2">
+      <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">Autonomous trading</span>
+      <StatusBadge :label="`Demo: ${demoAuto ? 'ON' : 'OFF'}`" :tone="demoAuto ? 'info' : 'neutral'" />
+      <StatusBadge :label="`Live: ${liveAuto ? 'ON' : 'OFF'}`" :tone="liveAuto ? 'danger' : 'neutral'" />
+      <span v-if="liveAuto" class="text-[11px] font-semibold text-rose-300">LIVE AUTO TRADING ENABLED</span>
+      <NuxtLink to="/settings" class="ml-auto text-[11px] text-muted hover:text-highlighted">Manage →</NuxtLink>
+    </section>
 
     <ErrorState
       v-if="statusQuery.isError.value"

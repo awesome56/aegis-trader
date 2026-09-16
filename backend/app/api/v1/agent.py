@@ -106,6 +106,7 @@ async def create_run(
         mode=payload.mode,
         provider_config_id=payload.provider_config_id,
         question=payload.prompt,
+        broker_account_id=payload.broker_account_id,
     )
     enqueued = await enqueue_agent_run(run.id)
     if not enqueued:

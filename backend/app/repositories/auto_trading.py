@@ -47,3 +47,12 @@ class AutoTradingPolicyRepository(BaseRepository[AutoTradingPolicy]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_enabled(self) -> list[AutoTradingPolicy]:
+        """All enabled policies that are bound to a broker account."""
+        stmt = select(AutoTradingPolicy).where(
+            AutoTradingPolicy.enabled.is_(True),
+            AutoTradingPolicy.broker_account_id.is_not(None),
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

@@ -56,7 +56,7 @@ def test_schedules() -> None:
 
 def test_cron_jobs_built_from_settings() -> None:
     jobs = build_cron_jobs()
-    assert len(jobs) == 3
+    assert len(jobs) == 4
 
 
 async def test_worker_health_disabled() -> None:

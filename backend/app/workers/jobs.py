@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 LOCK_PORTFOLIO_SNAPSHOT = "aegis:worker:lock:portfolio_snapshot"
 LOCK_STRATEGY_EVALUATION = "aegis:worker:lock:strategy_evaluation"
 LOCK_OPEN_ORDER_MONITOR = "aegis:worker:lock:open_order_monitor"
+LOCK_AUTONOMOUS_AGENT = "aegis:worker:lock:autonomous_agent"
 
 _OPEN_STATUSES = [status for status in OrderStatus if not status.is_terminal]
 
@@ -178,6 +179,89 @@ async def _run_monitor_open_orders(ctx: dict[str, Any], settings: Settings) -> d
     if ctx.get("redis") is not None:
         await write_heartbeat(ctx["redis"], settings)
     return {"job": "open_order_monitor", "open_orders": open_orders}
+
+
+async def run_autonomous_agent(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Periodic autonomous agent cycle (DEMO-first; live remains gated).
+
+    For every enabled auto-trading policy: evaluate its symbol universe and let
+    the agent act (analysis/propose/auto-trade) through the safety gateway.
+    """
+    settings = _settings(ctx)
+    if not settings.AUTO_TRADING_AGENT_ENABLED:
+        return {"job": "autonomous_agent", "skipped": True, "reason": "disabled"}
+    if ctx.get("redis") is not None:
+        try:
+            async with await _lock(ctx["redis"], LOCK_AUTONOMOUS_AGENT, settings):
+                return await _run_autonomous_agent(ctx, settings)
+        except LockNotAcquiredError:
+            logger.info("worker_job_skipped", job="autonomous_agent", reason="locked")
+            return {"job": "autonomous_agent", "skipped": True, "reason": "locked"}
+    return await _run_autonomous_agent(ctx, settings)
+
+
+async def _run_autonomous_agent(ctx: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    from app.agents.service import AgentService
+    from app.models.enums import AgentMode
+    from app.repositories.auto_trading import AutoTradingPolicyRepository
+    from app.repositories.broker_account import BrokerAccountRepository
+
+    runs = 0
+    failed = 0
+    symbols_processed = 0
+    timeframe = settings.strategy_evaluation_timeframe
+
+    async with worker_session() as session:
+        policies = await AutoTradingPolicyRepository(session).list_enabled()
+        for policy in policies:
+            account = await BrokerAccountRepository(session).get(policy.broker_account_id)
+            if account is None or not account.is_active:
+                continue
+            symbols = list(policy.allowed_symbols or settings.strategy_evaluation_symbols)[:5]
+            for symbol in symbols:
+                lock_key = f"autotrade:{account.id}:{symbol}"
+                acquired = None
+                if ctx.get("redis") is not None:
+                    acquired = redis_lock(
+                        ctx["redis"], lock_key, ttl_seconds=settings.AGENT_RUN_TIMEOUT_SECONDS + 30
+                    )
+                try:
+                    if acquired is not None:
+                        await acquired.__aenter__()
+                    service = AgentService(session, settings)
+                    run = await service.create_run(
+                        user_id=policy.user_id,
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        mode=AgentMode.AUTO_TRADE,
+                        broker_account_id=account.id,
+                        question=(
+                            "Autonomous cycle: inspect account, positions and orders; "
+                            "act only if evidence is strong, otherwise HOLD."
+                        ),
+                    )
+                    await service.execute(run.id)
+                    runs += 1
+                    symbols_processed += 1
+                except Exception as exc:  # noqa: BLE001 - one symbol must not stop the cycle
+                    failed += 1
+                    logger.warning(
+                        "autonomous_agent_symbol_failed", symbol=symbol, error=str(exc)
+                    )
+                finally:
+                    if acquired is not None:
+                        await acquired.__aexit__(None, None, None)
+
+    if ctx.get("redis") is not None:
+        await write_heartbeat(ctx["redis"], settings)
+    logger.info(
+        "worker_job_done",
+        job="autonomous_agent",
+        runs=runs,
+        failed=failed,
+        symbols=symbols_processed,
+    )
+    return {"job": "autonomous_agent", "runs": runs, "failed": failed}
 
 
 async def run_backtest(ctx: dict[str, Any], backtest_id: str) -> dict[str, Any]:

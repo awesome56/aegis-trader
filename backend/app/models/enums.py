@@ -164,6 +164,7 @@ class ProviderStatus(StrEnum):
 class AgentMode(StrEnum):
     ANALYSIS_ONLY = "ANALYSIS_ONLY"
     PROPOSE = "PROPOSE"
+    AUTO_TRADE = "AUTO_TRADE"
 
 
 class BrokerEnvironment(StrEnum):

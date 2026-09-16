@@ -24,6 +24,7 @@ from app.workers.jobs import (
     monitor_open_orders,
     portfolio_snapshot,
     run_agent,
+    run_autonomous_agent,
     run_backtest,
 )
 
@@ -84,6 +85,11 @@ def build_cron_jobs(settings: Settings | None = None) -> list[Any]:
             **_schedule(settings.WORKER_OPEN_ORDER_INTERVAL_SECONDS),
             run_at_startup=False,
         ),
+        cron(
+            run_autonomous_agent,
+            **_schedule(max(60, settings.AUTO_TRADING_AGENT_INTERVAL_SECONDS)),
+            run_at_startup=False,
+        ),
     ]
 
 
@@ -94,6 +100,7 @@ class WorkerSettings:
         monitor_open_orders,
         run_backtest,
         run_agent,
+        run_autonomous_agent,
     ]
     cron_jobs = build_cron_jobs()
     redis_settings = RedisSettings.from_dsn(get_settings().REDIS_URL)

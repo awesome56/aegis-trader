@@ -3023,6 +3023,7 @@ components:
       enum:
       - ANALYSIS_ONLY
       - PROPOSE
+      - AUTO_TRADE
       title: AgentMode
     AgentRunCreateRequest:
       properties:
@@ -3045,6 +3046,12 @@ components:
             format: uuid
           - type: 'null'
           title: Provider Config Id
+        broker_account_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Broker Account Id
         prompt:
           anyOf:
           - type: string

@@ -25,8 +25,9 @@ from app.agents.types import TradingAnalysisResult
 from app.ai.factory import create_provider
 from app.ai.security import CredentialError
 from app.ai.service import AIProviderService
+from app.auto_trading.service import AutoTradingPolicyService
 from app.core.config import Settings, get_settings
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.agent import AgentDecision, AgentRun
 from app.models.enums import (
@@ -89,11 +90,14 @@ class AgentService:
         mode: AgentMode,
         provider_config_id: uuid.UUID | None = None,
         question: str | None = None,
+        broker_account_id: uuid.UUID | None = None,
     ) -> AgentRun:
         if not self._settings.AGENT_ENABLED:
             raise AgentNotConfiguredError("the agent is disabled")
-        if mode is AgentMode.PROPOSE and not self._settings.AI_ENABLED:
+        if mode in (AgentMode.PROPOSE, AgentMode.AUTO_TRADE) and not self._settings.AI_ENABLED:
             raise AgentNotConfiguredError("AI features are disabled")
+        if mode is AgentMode.AUTO_TRADE and broker_account_id is None:
+            raise ValidationError("AUTO_TRADE requires a broker_account_id")
 
         if await self._runs.count_active_for_user(user_id) >= (
             self._settings.AGENT_MAX_CONCURRENT_RUNS_PER_USER
@@ -119,7 +123,11 @@ class AgentService:
             mode=mode,
             prompt=question[: self._settings.AGENT_MAX_PROMPT_CHARS] if question else None,
             symbols=[symbol.strip().upper()],
-            context={"timeframe": timeframe, "question": question},
+            context={
+                "timeframe": timeframe,
+                "question": question,
+                "broker_account_id": str(broker_account_id) if broker_account_id else None,
+            },
             created_at=now,
             updated_at=now,
         )
@@ -153,6 +161,26 @@ class AgentService:
             provider = await self._build_provider(run, user)
             symbol = (run.symbols or [user.email])[0]
             timeframe = str((run.context or {}).get("timeframe") or "1h")
+            account_id = (run.context or {}).get("broker_account_id")
+            auto_actions: frozenset[str] = frozenset()
+            account = None
+            if account_id:
+                from app.repositories.broker_account import BrokerAccountRepository
+
+                account = await BrokerAccountRepository(self._session).get_for_user(
+                    uuid.UUID(str(account_id)), user.id
+                )
+                if run.mode is AgentMode.AUTO_TRADE and account is not None:
+                    policy = await AutoTradingPolicyService(
+                        self._session, self._settings
+                    ).get_or_create(user.id, account)
+                    # Fail closed: no permitted actions -> no write tools exposed.
+                    auto_actions = frozenset(
+                        action.value
+                        for action in AutoTradingPolicyService(
+                            self._session, self._settings
+                        ).allowed_actions(policy)
+                    )
             context = AgentToolContext(
                 session=self._session,
                 user=user,
@@ -160,6 +188,8 @@ class AgentService:
                 timeframe=timeframe,
                 mode=AgentMode(run.mode),
                 settings=self._settings,
+                broker_account_id=account.id if account is not None else None,
+                auto_actions=auto_actions,
             )
             agent = TradingAnalysisAgent(provider, self._settings)
             outcome = await asyncio.wait_for(

@@ -42,6 +42,7 @@ class AgentRunCreateRequest(BaseModel):
     timeframe: str = Field(default="1h", max_length=16)
     mode: AgentMode = AgentMode.ANALYSIS_ONLY
     provider_config_id: uuid.UUID | None = None
+    broker_account_id: uuid.UUID | None = None
     prompt: str | None = Field(default=None, max_length=2000)
 
 

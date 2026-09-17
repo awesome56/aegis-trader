@@ -296,3 +296,33 @@ async def test_alpaca_market_status_matches_equity_sessions() -> None:
     status = await provider.get_market_status()
     assert status.provider == "alpaca"
     assert status.is_open is is_market_open(AssetClass.EQUITY)
+
+
+async def test_alpaca_zero_bid_ask_is_treated_as_absent() -> None:
+    """Outside RTH the IEX feed reports 0 for bid/ask: that is 'no quote'."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "latestQuote": {"t": "2026-01-15T23:00:00Z", "bp": "0", "ap": "0"},
+                "latestTrade": {"t": "2026-01-15T19:59:00Z", "p": "100.00"},
+                "dailyBar": {
+                    "t": "2026-01-15T14:30:00Z",
+                    "o": "99",
+                    "h": "101",
+                    "l": "98",
+                    "c": "100",
+                    "v": "1",
+                },
+            },
+        )
+
+    provider = AlpacaMarketDataProvider(_alpaca_settings(), client=_client(handler))
+    quote = await provider.get_quote("AAPL")
+
+    assert quote.bid is None
+    assert quote.ask is None
+    assert str(quote.last) == "100.00"
+    # A zero ask must not masquerade as a tradeable price.
+    assert quote.last > 0

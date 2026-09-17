@@ -233,6 +233,18 @@ def _dec(value: object) -> Decimal | None:
         return None
 
 
+def _positive(value: object) -> Decimal | None:
+    """A non-positive Alpaca quote field means 'no quote', not a price of zero.
+
+    Outside regular hours the IEX feed reports ``bp``/``ap`` as 0; surfacing that
+    as a real price would fail quote validation and, worse, look tradeable.
+    """
+    parsed = _dec(value)
+    if parsed is None or parsed <= 0:
+        return None
+    return parsed
+
+
 def _timestamp(value: object) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
@@ -251,12 +263,12 @@ def _quote_from_snapshot(symbol: str, payload: dict, provider: str) -> MarketQuo
     daily = payload.get("dailyBar") or {}
     previous = payload.get("prevDailyBar") or {}
 
-    bid = _dec(quote.get("bp"))
-    ask = _dec(quote.get("ap"))
-    last = _dec(trade.get("p")) or _dec(daily.get("c"))
+    bid = _positive(quote.get("bp"))
+    ask = _positive(quote.get("ap"))
+    last = _positive(trade.get("p")) or _positive(daily.get("c"))
     if last is None and bid is not None and ask is not None:
         last = (bid + ask) / 2
-    if last is None or last <= 0:
+    if last is None:
         raise AssetNotFoundError(f"Alpaca returned no usable price for {symbol}")
 
     market_timestamp = (

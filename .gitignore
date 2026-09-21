@@ -36,3 +36,16 @@ mobile/**/GeneratedPluginRegistrant.*
 .idea/
 .vscode/
 .DS_Store
+
+# --- Secrets and local environment files must never be committed ---
+.env
+.env.*
+!.env.example
+!.env.prod.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets.json
+auth.json
+.trae/mcp.json
